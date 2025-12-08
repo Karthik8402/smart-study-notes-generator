@@ -1,0 +1,211 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom base styles */
+@layer base {
+  :root {
+    --gradient-start: #0ea5e9;
+    --gradient-end: #d946ef;
+  }
+  
+  body {
+    @apply bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100;
+    @apply transition-colors duration-300;
+  }
+  
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    @apply w-2;
+  }
+  
+  ::-webkit-scrollbar-track {
+    @apply bg-gray-100 dark:bg-gray-900;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    @apply bg-gray-300 dark:bg-gray-700 rounded-full;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-400 dark:bg-gray-600;
+  }
+}
+
+/* Custom component styles */
+@layer components {
+  /* Gradient text */
+  .gradient-text {
+    @apply bg-gradient-to-r from-primary-500 to-accent-500 bg-clip-text text-transparent;
+  }
+  
+  /* Gradient background */
+  .gradient-bg {
+    @apply bg-gradient-to-r from-primary-500 to-accent-500;
+  }
+  
+  /* Animated gradient background */
+  .animated-gradient {
+    background: linear-gradient(270deg, #0ea5e9, #d946ef, #0ea5e9);
+    background-size: 200% 200%;
+    animation: gradient 8s linear infinite;
+  }
+  
+  /* Glass morphism card */
+  .glass-card {
+    @apply bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl;
+    @apply border border-gray-200/50 dark:border-gray-700/50;
+    @apply rounded-2xl shadow-xl;
+  }
+  
+  /* Primary button */
+  .btn-primary {
+    @apply px-6 py-3 rounded-xl font-semibold;
+    @apply bg-gradient-to-r from-primary-500 to-primary-600;
+    @apply text-white shadow-lg shadow-primary-500/25;
+    @apply hover:from-primary-600 hover:to-primary-700;
+    @apply hover:shadow-xl hover:shadow-primary-500/30;
+    @apply hover:-translate-y-0.5;
+    @apply active:translate-y-0;
+    @apply transition-all duration-200;
+    @apply focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2;
+    @apply disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0;
+  }
+  
+  /* Secondary button */
+  .btn-secondary {
+    @apply px-6 py-3 rounded-xl font-semibold;
+    @apply bg-gray-100 dark:bg-gray-800;
+    @apply text-gray-700 dark:text-gray-300;
+    @apply hover:bg-gray-200 dark:hover:bg-gray-700;
+    @apply hover:-translate-y-0.5;
+    @apply active:translate-y-0;
+    @apply transition-all duration-200;
+    @apply focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2;
+  }
+  
+  /* Accent button */
+  .btn-accent {
+    @apply px-6 py-3 rounded-xl font-semibold;
+    @apply bg-gradient-to-r from-accent-500 to-accent-600;
+    @apply text-white shadow-lg shadow-accent-500/25;
+    @apply hover:from-accent-600 hover:to-accent-700;
+    @apply hover:shadow-xl hover:shadow-accent-500/30;
+    @apply hover:-translate-y-0.5;
+    @apply active:translate-y-0;
+    @apply transition-all duration-200;
+    @apply focus:outline-none focus:ring-2 focus:ring-accent-500 focus:ring-offset-2;
+  }
+  
+  /* Input field */
+  .input-field {
+    @apply w-full px-4 py-3 rounded-xl;
+    @apply bg-gray-100 dark:bg-gray-800;
+    @apply border border-gray-200 dark:border-gray-700;
+    @apply text-gray-900 dark:text-gray-100;
+    @apply placeholder-gray-500 dark:placeholder-gray-400;
+    @apply focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent;
+    @apply transition-all duration-200;
+  }
+  
+  /* Card */
+  .card {
+    @apply bg-white dark:bg-gray-900;
+    @apply rounded-2xl shadow-lg;
+    @apply border border-gray-100 dark:border-gray-800;
+    @apply p-6;
+    @apply transition-all duration-300;
+    @apply hover:shadow-xl hover:-translate-y-1;
+  }
+  
+  /* Feature card with icon */
+  .feature-card {
+    @apply card;
+    @apply flex flex-col items-center text-center;
+    @apply hover:border-primary-200 dark:hover:border-primary-800;
+  }
+  
+  /* Chat bubble - user */
+  .chat-bubble-user {
+    @apply max-w-[80%] px-4 py-3 rounded-2xl rounded-br-md;
+    @apply bg-gradient-to-r from-primary-500 to-primary-600;
+    @apply text-white;
+    @apply ml-auto;
+  }
+  
+  /* Chat bubble - assistant */
+  .chat-bubble-assistant {
+    @apply max-w-[80%] px-4 py-3 rounded-2xl rounded-bl-md;
+    @apply bg-gray-100 dark:bg-gray-800;
+    @apply text-gray-900 dark:text-gray-100;
+  }
+  
+  /* Badge */
+  .badge {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium;
+    @apply bg-primary-100 dark:bg-primary-900/50;
+    @apply text-primary-700 dark:text-primary-300;
+  }
+  
+  /* Section heading */
+  .section-heading {
+    @apply text-3xl md:text-4xl font-bold mb-4;
+    @apply text-gray-900 dark:text-white;
+  }
+  
+  /* Section subheading */
+  .section-subheading {
+    @apply text-lg text-gray-600 dark:text-gray-400;
+    @apply max-w-2xl mx-auto;
+  }
+}
+
+/* Utility classes */
+@layer utilities {
+  /* Hide scrollbar */
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  
+  /* Text shadow for readability on gradients */
+  .text-shadow {
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Shine effect */
+  .shine {
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .shine::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+      to right,
+      transparent 0%,
+      rgba(255, 255, 255, 0.1) 50%,
+      transparent 100%
+    );
+    transform: rotate(45deg);
+    animation: shine 3s ease-in-out infinite;
+  }
+  
+  @keyframes shine {
+    0% {
+      transform: translateX(-100%) rotate(45deg);
+    }
+    100% {
+      transform: translateX(100%) rotate(45deg);
+    }
+  }
+}
