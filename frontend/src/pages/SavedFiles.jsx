@@ -25,7 +25,7 @@ export default function SavedFiles() {
         setLoading(true);
         try {
             const data = await mcpAPI.getSavedFiles(selectedCategory);
-            setFiles(data);
+            setFiles(data.files || []);
         } catch (error) {
             console.error('Failed to fetch files:', error);
         } finally {
@@ -107,8 +107,8 @@ export default function SavedFiles() {
                                     key={cat.id || 'all'}
                                     onClick={() => setSelectedCategory(cat.id)}
                                     className={`w-full text-left px-3 py-2 rounded-lg transition flex items-center gap-2 ${selectedCategory === cat.id
-                                            ? 'bg-purple-600 text-white'
-                                            : 'text-gray-300 hover:bg-gray-700/50'
+                                        ? 'bg-purple-600 text-white'
+                                        : 'text-gray-300 hover:bg-gray-700/50'
                                         }`}
                                 >
                                     <span>{cat.icon}</span>

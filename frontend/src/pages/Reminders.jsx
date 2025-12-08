@@ -31,7 +31,7 @@ export default function Reminders() {
     const fetchReminders = async () => {
         try {
             const data = await mcpAPI.getReminders();
-            setReminders(data);
+            setReminders(data.reminders || []);
         } catch (error) {
             console.error('Failed to fetch reminders:', error);
         } finally {
@@ -163,8 +163,8 @@ export default function Reminders() {
                         key={f}
                         onClick={() => setFilter(f)}
                         className={`px-4 py-2 rounded-lg capitalize transition ${filter === f
-                                ? 'bg-purple-600 text-white'
-                                : 'bg-gray-700/50 text-gray-300 hover:bg-gray-600/50'
+                            ? 'bg-purple-600 text-white'
+                            : 'bg-gray-700/50 text-gray-300 hover:bg-gray-600/50'
                             }`}
                     >
                         {f}
@@ -184,8 +184,8 @@ export default function Reminders() {
                         <div
                             key={reminder.id}
                             className={`p-4 rounded-xl border transition ${reminder.completed
-                                    ? 'bg-gray-800/20 border-gray-700/30 opacity-60'
-                                    : 'bg-gray-800/50 border-gray-700/50 hover:border-purple-500/50'
+                                ? 'bg-gray-800/20 border-gray-700/30 opacity-60'
+                                : 'bg-gray-800/50 border-gray-700/50 hover:border-purple-500/50'
                                 }`}
                         >
                             <div className="flex items-start justify-between">
