@@ -26,8 +26,15 @@ youtube-transcript-api==0.6.1
 aiofiles==23.2.1
 
 # Text Processing
-langchain==0.0.350
+langchain-text-splitters==0.3.2
 tiktoken==0.5.2
+
+# Authentication & Security
+bcrypt==4.1.2
+email-validator==2.1.0
+
+# TensorFlow compatibility for sentence-transformers
+tf-keras==2.17.0
 
 # Utilities
 python-dotenv==1.0.0
