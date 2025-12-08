@@ -84,13 +84,7 @@ export const uploadAPI = {
   },
   
   uploadText: async (content, title) => {
-    const formData = new FormData();
-    formData.append('content', content);
-    formData.append('title', title);
-    
-    const response = await api.post('/upload/text', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
+    const response = await api.post('/upload/text', { content, title });
     return response.data;
   },
   
@@ -161,6 +155,76 @@ export const notesAPI = {
   
   delete: async (noteId) => {
     const response = await api.delete(`/notes/${noteId}`);
+    return response.data;
+  },
+};
+
+// MCP Tools API
+export const mcpAPI = {
+  // Reminders
+  createReminder: async (reminder) => {
+    const response = await api.post('/mcp/reminders', reminder);
+    return response.data;
+  },
+  
+  getReminders: async () => {
+    const response = await api.get('/mcp/reminders');
+    return response.data;
+  },
+  
+  getUpcomingReminders: async (days = 7) => {
+    const response = await api.get(`/mcp/reminders/upcoming?days=${days}`);
+    return response.data;
+  },
+  
+  completeReminder: async (reminderId) => {
+    const response = await api.put(`/mcp/reminders/${reminderId}/complete`);
+    return response.data;
+  },
+  
+  deleteReminder: async (reminderId) => {
+    const response = await api.delete(`/mcp/reminders/${reminderId}`);
+    return response.data;
+  },
+  
+  // Study Schedule
+  createSchedule: async (subjects, startDate, days = 7, hoursPerDay = 4) => {
+    const response = await api.post('/mcp/schedule', {
+      subjects,
+      start_date: startDate,
+      days,
+      hours_per_day: hoursPerDay
+    });
+    return response.data;
+  },
+  
+  // Saved Files
+  getSavedFiles: async (category = null) => {
+    const params = category ? `?category=${category}` : '';
+    const response = await api.get(`/mcp/saved-files${params}`);
+    return response.data;
+  },
+  
+  getSavedFileContent: async (category, filename) => {
+    const response = await api.get(`/mcp/saved-files/${category}/${filename}`);
+    return response.data;
+  },
+  
+  deleteSavedFile: async (category, filename) => {
+    const response = await api.delete(`/mcp/saved-files/${category}/${filename}`);
+    return response.data;
+  },
+  
+  saveNote: async (title, content, noteType) => {
+    const response = await api.post('/mcp/save-note', null, {
+      params: { title, content, note_type: noteType }
+    });
+    return response.data;
+  },
+  
+  // Stats
+  getStats: async () => {
+    const response = await api.get('/mcp/stats');
     return response.data;
   },
 };

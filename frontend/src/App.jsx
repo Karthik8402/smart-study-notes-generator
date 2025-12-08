@@ -9,6 +9,8 @@ import Dashboard from './pages/Dashboard';
 import Chat from './pages/Chat';
 import Notes from './pages/Notes';
 import Upload from './pages/Upload';
+import Reminders from './pages/Reminders';
+import SavedFiles from './pages/SavedFiles';
 
 function App() {
     return (
@@ -27,6 +29,8 @@ function App() {
                             <Route path="/chat" element={<Chat />} />
                             <Route path="/notes" element={<Notes />} />
                             <Route path="/upload" element={<Upload />} />
+                            <Route path="/reminders" element={<Reminders />} />
+                            <Route path="/saved-files" element={<SavedFiles />} />
                         </Route>
                     </Route>
 
@@ -39,3 +43,4 @@ function App() {
 }
 
 export default App;
+

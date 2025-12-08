@@ -10,7 +10,7 @@ import os
 from app.config import settings
 from app.database.mongodb import connect_to_mongo, close_mongo_connection
 from app.database.vector_db import initialize_vector_db
-from app.routers import auth, upload, chat, notes
+from app.routers import auth, upload, chat, notes, mcp
 
 
 @asynccontextmanager
@@ -54,6 +54,7 @@ app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
 app.include_router(upload.router, prefix="/api/upload", tags=["File Upload"])
 app.include_router(chat.router, prefix="/api/chat", tags=["Chat & RAG"])
 app.include_router(notes.router, prefix="/api/notes", tags=["AI Notes Generation"])
+app.include_router(mcp.router, prefix="/api/mcp", tags=["MCP Tools"])
 
 
 @app.get("/", tags=["Health"])
@@ -63,4 +64,4 @@ async def root():
 
 @app.get("/api/health", tags=["Health"])
 async def health_check():
-    return {"status": "healthy", "services": ["auth", "upload", "chat", "notes"]}
+    return {"status": "healthy", "services": ["auth", "upload", "chat", "notes", "mcp"]}

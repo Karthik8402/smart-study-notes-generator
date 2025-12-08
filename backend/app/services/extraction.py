@@ -70,31 +70,57 @@ async def extract_plain_text(file_path: str) -> str:
 async def extract_youtube_transcript(url: str) -> Tuple[str, str]:
     """Extract transcript from YouTube video."""
     from youtube_transcript_api import YouTubeTranscriptApi
-    import re
     
-    # Extract video ID
-    patterns = [
-        r'(?:v=|\/videos\/|embed\/|youtu\.be\/|\/v\/|\/e\/|watch\?v%3D|%2Fvideos%2F|%2Fv%2F)([^#\&\?\/\s]*)',
-        r'^([a-zA-Z0-9_-]{11})$'
-    ]
-    
+    # Extract video ID from various URL formats
     video_id = None
-    for pattern in patterns:
-        match = re.search(pattern, url)
+    
+    # Pattern for youtu.be/VIDEO_ID (with optional query params)
+    if 'youtu.be/' in url:
+        match = re.search(r'youtu\.be\/([a-zA-Z0-9_-]{11})', url)
         if match:
             video_id = match.group(1)
-            break
     
+    # Pattern for youtube.com/watch?v=VIDEO_ID
+    if not video_id and 'v=' in url:
+        match = re.search(r'v=([a-zA-Z0-9_-]{11})', url)
+        if match:
+            video_id = match.group(1)
+    
+    # Pattern for youtube.com/embed/VIDEO_ID or youtube.com/shorts/VIDEO_ID
+    if not video_id:
+        match = re.search(r'(?:embed|shorts)\/([a-zA-Z0-9_-]{11})', url)
+        if match:
+            video_id = match.group(1)
+    
+    # Direct video ID (11 characters)
+    if not video_id and len(url.strip()) == 11:
+        video_id = url.strip()
+    
+    # Error if no video ID found
     if not video_id:
         raise ValueError("Could not extract YouTube video ID from URL")
     
     def _get_transcript():
-        transcript_list = YouTubeTranscriptApi.get_transcript(video_id)
-        text = " ".join([entry['text'] for entry in transcript_list])
-        return text
+        try:
+            # Use the correct API - it's a class method
+            ytt_api = YouTubeTranscriptApi()
+            transcript_list = ytt_api.fetch(video_id)
+            text = " ".join([entry.text for entry in transcript_list])
+            return text
+        except Exception as e:
+            # Fallback: try older API format
+            try:
+                transcript_list = YouTubeTranscriptApi.get_transcript(video_id)
+                text = " ".join([entry['text'] for entry in transcript_list])
+                return text
+            except:
+                raise ValueError(f"Could not fetch transcript: {str(e)}")
     
     loop = asyncio.get_event_loop()
     text = await loop.run_in_executor(None, _get_transcript)
+    
+    if not text or len(text) < 50:
+        raise ValueError("Transcript too short or empty")
     
     return text, f"YouTube Video {video_id}"
 
@@ -108,7 +134,7 @@ def clean_extracted_text(text: str) -> str:
     text = re.sub(r'\s+', ' ', text)
     
     # Remove special characters but keep basic punctuation
-    text = re.sub(r'[^\w\s.,!?;:\-\'"()[\]{}@#$%&*+=/<>]', '', text)
+    text = re.sub(r'[^\w\s.,!?;:\-\'"()\[\]{}@#$%&*+=/]', '', text)
     
     # Normalize line breaks
     text = re.sub(r'\n{3,}', '\n\n', text)

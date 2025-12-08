@@ -173,39 +173,44 @@ async def upload_text(
 ):
     user_id = str(current_user["_id"])
     
-    text = clean_extracted_text(request.content)
-    
-    if len(text) < 50:
-        raise HTTPException(status_code=400, detail="Text content too short")
-    
-    file_id = str(uuid.uuid4())
-    
-    chunks_count = await ingest_document(
-        text=text,
-        document_id=file_id,
-        user_id=user_id,
-        filename=request.title,
-        file_type="text"
-    )
-    
-    documents = get_documents_collection()
-    doc = {
-        "_id": file_id,
-        "user_id": user_id,
-        "filename": request.title,
-        "file_type": "text",
-        "chunks_count": chunks_count,
-        "uploaded_at": datetime.utcnow()
-    }
-    await documents.insert_one(doc)
-    
-    return DocumentResponse(
-        id=file_id,
-        filename=request.title,
-        file_type="text",
-        chunks_count=chunks_count,
-        uploaded_at=doc["uploaded_at"]
-    )
+    try:
+        text = clean_extracted_text(request.content)
+        
+        if len(text) < 50:
+            raise HTTPException(status_code=400, detail="Text content too short (minimum 50 characters)")
+        
+        file_id = str(uuid.uuid4())
+        
+        chunks_count = await ingest_document(
+            text=text,
+            document_id=file_id,
+            user_id=user_id,
+            filename=request.title,
+            file_type="text"
+        )
+        
+        documents = get_documents_collection()
+        doc = {
+            "_id": file_id,
+            "user_id": user_id,
+            "filename": request.title,
+            "file_type": "text",
+            "chunks_count": chunks_count,
+            "uploaded_at": datetime.utcnow()
+        }
+        await documents.insert_one(doc)
+        
+        return DocumentResponse(
+            id=file_id,
+            filename=request.title,
+            file_type="text",
+            chunks_count=chunks_count,
+            uploaded_at=doc["uploaded_at"]
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to upload text: {str(e)}")
 
 
 @router.get("/documents", response_model=List[DocumentResponse])

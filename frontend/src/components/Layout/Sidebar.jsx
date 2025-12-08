@@ -14,6 +14,8 @@ const navItems = [
     { path: '/upload', icon: Upload, label: 'Upload Files' },
     { path: '/chat', icon: MessageSquare, label: 'Chat with AI' },
     { path: '/notes', icon: FileText, label: 'My Notes' },
+    { path: '/reminders', icon: Calendar, label: 'Study Reminders' },
+    { path: '/saved-files', icon: FolderOpen, label: 'Saved Files' },
 ];
 
 export default function Sidebar({ isOpen, onClose }) {
