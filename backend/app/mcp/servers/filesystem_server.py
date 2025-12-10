@@ -250,5 +250,5 @@ def get_file_info(path: str, user_id: str = "default") -> str:
 
 # Run server
 if __name__ == "__main__":
-    print("🗂️ Starting Filesystem MCP Server on port 9000...")
-    mcp.run(transport="sse", host="0.0.0.0", port=9000)
+    print("[Filesystem] Starting MCP Server (stdio transport)...")
+    mcp.run()

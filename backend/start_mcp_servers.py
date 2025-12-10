@@ -22,7 +22,7 @@ processes = []
 
 def run_server(name: str, module: str, port: int):
     """Run an MCP server as a subprocess."""
-    print(f"🚀 Starting {name} MCP Server on port {port}...")
+    print(f"[*] Starting {name} MCP Server on port {port}...")
     
     process = subprocess.Popen(
         [sys.executable, "-m", module],
@@ -39,10 +39,10 @@ def run_server(name: str, module: str, port: int):
 
 def cleanup(signum=None, frame=None):
     """Clean up all processes on exit."""
-    print("\n🛑 Shutting down MCP servers...")
+    print("\n[!] Shutting down MCP servers...")
     for name, process in processes:
         process.terminate()
-        print(f"   ✓ {name} stopped")
+        print(f"   [x] {name} stopped")
     sys.exit(0)
 
 
@@ -74,9 +74,9 @@ def main():
     print("   All MCP Servers Running!")
     print("=" * 50)
     print()
-    print("   📁 Filesystem: http://localhost:9000")
-    print("   📅 Calendar:   http://localhost:9001")
-    print("   ☁️ Drive:      http://localhost:9002")
+    print("   Filesystem: http://localhost:9000")
+    print("   Calendar:   http://localhost:9001")
+    print("   Drive:      http://localhost:9002")
     print()
     print("   Press Ctrl+C to stop all servers")
     print()

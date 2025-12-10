@@ -393,5 +393,5 @@ def get_today_events(user_id: str = "default") -> str:
 
 # Run server
 if __name__ == "__main__":
-    print("📅 Starting Calendar MCP Server on port 9001...")
-    mcp.run(transport="sse", host="0.0.0.0", port=9001)
+    print("[Calendar] Starting MCP Server (stdio transport)...")
+    mcp.run()

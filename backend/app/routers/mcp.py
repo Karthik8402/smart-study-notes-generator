@@ -1,461 +1,412 @@
-"""MCP Tools Router - Using proper MCP Tool Classes"""
+"""
+MCP Tools Integration Router
+
+This router exposes MCP tool functionality via REST API endpoints.
+Instead of running separate MCP servers, we integrate the tools directly
+into the FastAPI backend for simpler deployment.
+"""
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime
-import os
+import json
 
-from app.config import settings
 from app.routers.auth import get_current_user
 
-# Import MCP Tools
-from app.mcp.tools.calendar_tool import calendar_tool
-from app.mcp.tools.file_tool import file_tool
-from app.mcp.tools.drive_tool import drive_tool
+# Import MCP tool implementations
+from app.mcp.servers.filesystem_server import (
+    list_directory, read_file, write_file, delete_file,
+    create_directory, search_files, get_file_info
+)
+from app.mcp.servers.calendar_server import (
+    create_event, list_events, get_event, update_event, delete_event,
+    get_upcoming_events, create_study_schedule, get_today_events
+)
+from app.mcp.servers.drive_server import (
+    upload_file, download_file, list_files, list_folders,
+    create_folder, delete_file as drive_delete_file, move_file,
+    search_drive, share_file, get_drive_stats
+)
 
 router = APIRouter()
 
-# ========== Pydantic Models ==========
 
-class ReminderCreate(BaseModel):
+# ==================== Request Models ====================
+
+class CreateEventRequest(BaseModel):
     title: str
-    description: Optional[str] = None
-    due_date: datetime
-    subject: Optional[str] = None
-    priority: str = "medium"
-    tags: Optional[List[str]] = None
+    start_time: str  # ISO format
+    end_time: Optional[str] = None
+    description: str = ""
+    location: str = ""
+    reminder_minutes: int = 30
 
-class ReminderUpdate(BaseModel):
+
+class UpdateEventRequest(BaseModel):
     title: Optional[str] = None
+    start_time: Optional[str] = None
+    end_time: Optional[str] = None
     description: Optional[str] = None
-    due_date: Optional[datetime] = None
-    subject: Optional[str] = None
-    priority: Optional[str] = None
+    location: Optional[str] = None
+    status: Optional[str] = None
 
-class StudyScheduleRequest(BaseModel):
-    subjects: List[str]
-    start_date: datetime
+
+class CreateScheduleRequest(BaseModel):
+    subjects: str  # Comma-separated
+    start_date: str
     days: int = 7
-    hours_per_day: int = 4
-    time_of_day: str = "18:00"
+    hours_per_session: int = 2
+    start_hour: int = 18
 
-class SaveNoteRequest(BaseModel):
-    title: str
+
+class WriteFileRequest(BaseModel):
+    path: str
     content: str
-    note_type: str = "other"
+
+
+class UploadToDriveRequest(BaseModel):
+    filename: str
+    content: str
+    folder: str = "Documents"
+    is_base64: bool = False
+    description: str = ""
+
 
 class CreateFolderRequest(BaseModel):
-    folder_name: str
-    parent_folder: Optional[str] = None
+    name: str
+    parent: Optional[str] = None
 
 
-# ========== Calendar Tool Endpoints ==========
+# ==================== Filesystem Endpoints ====================
 
-@router.post("/calendar/reminders")
-async def create_reminder(
-    reminder: ReminderCreate,
+@router.get("/filesystem/list")
+async def api_list_directory(
+    path: str = ".",
     current_user: dict = Depends(get_current_user)
 ):
-    """Create a new study reminder using MCP Calendar Tool."""
+    """List files and directories."""
     user_id = str(current_user["_id"])
-    
-    result = await calendar_tool.create_reminder(
-        user_id=user_id,
-        title=reminder.title,
-        due_date=reminder.due_date,
-        description=reminder.description,
-        subject=reminder.subject,
-        priority=reminder.priority,
-        tags=reminder.tags
+    result = list_directory(path, user_id)
+    return json.loads(result)
+
+
+@router.get("/filesystem/read")
+async def api_read_file(
+    path: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Read a file's contents."""
+    user_id = str(current_user["_id"])
+    result = read_file(path, user_id)
+    return json.loads(result)
+
+
+@router.post("/filesystem/write")
+async def api_write_file(
+    request: WriteFileRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """Write content to a file."""
+    user_id = str(current_user["_id"])
+    result = write_file(request.path, request.content, user_id)
+    return json.loads(result)
+
+
+@router.delete("/filesystem/delete")
+async def api_delete_file(
+    path: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Delete a file."""
+    user_id = str(current_user["_id"])
+    result = delete_file(path, user_id)
+    return json.loads(result)
+
+
+@router.post("/filesystem/mkdir")
+async def api_create_directory(
+    path: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Create a directory."""
+    user_id = str(current_user["_id"])
+    result = create_directory(path, user_id)
+    return json.loads(result)
+
+
+@router.get("/filesystem/search")
+async def api_search_files(
+    query: str,
+    path: str = ".",
+    current_user: dict = Depends(get_current_user)
+):
+    """Search for files."""
+    user_id = str(current_user["_id"])
+    result = search_files(query, path, user_id)
+    return json.loads(result)
+
+
+@router.get("/filesystem/info")
+async def api_get_file_info(
+    path: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Get file information."""
+    user_id = str(current_user["_id"])
+    result = get_file_info(path, user_id)
+    return json.loads(result)
+
+
+# ==================== Calendar Endpoints ====================
+
+@router.post("/calendar/events")
+async def api_create_event(
+    request: CreateEventRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """Create a calendar event."""
+    user_id = str(current_user["_id"])
+    result = create_event(
+        title=request.title,
+        start_time=request.start_time,
+        end_time=request.end_time,
+        description=request.description,
+        location=request.location,
+        reminder_minutes=request.reminder_minutes,
+        user_id=user_id
     )
-    
-    return {"status": "success", "reminder": result}
+    return json.loads(result)
 
 
-@router.get("/calendar/reminders")
-async def get_reminders(
+@router.get("/calendar/events")
+async def api_list_events(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
     current_user: dict = Depends(get_current_user)
 ):
-    """Get all reminders for the current user."""
+    """List calendar events."""
     user_id = str(current_user["_id"])
-    reminders = await calendar_tool.get_all_reminders(user_id)
-    return {"reminders": reminders, "count": len(reminders)}
+    result = list_events(start_date, end_date, user_id)
+    return json.loads(result)
 
 
-@router.get("/calendar/reminders/upcoming")
-async def get_upcoming_reminders(
+@router.get("/calendar/events/today")
+async def api_get_today_events(
+    current_user: dict = Depends(get_current_user)
+):
+    """Get today's events."""
+    user_id = str(current_user["_id"])
+    result = get_today_events(user_id)
+    return json.loads(result)
+
+
+@router.get("/calendar/events/upcoming")
+async def api_get_upcoming_events(
     days: int = 7,
     current_user: dict = Depends(get_current_user)
 ):
-    """Get upcoming reminders within specified days."""
+    """Get upcoming events."""
     user_id = str(current_user["_id"])
-    reminders = await calendar_tool.get_upcoming_reminders(user_id, days)
-    return {"reminders": reminders, "count": len(reminders)}
+    result = get_upcoming_events(days, user_id)
+    return json.loads(result)
 
 
-@router.get("/calendar/reminders/overdue")
-async def get_overdue_reminders(
+@router.get("/calendar/events/{event_id}")
+async def api_get_event(
+    event_id: str,
     current_user: dict = Depends(get_current_user)
 ):
-    """Get all overdue reminders."""
+    """Get a specific event."""
     user_id = str(current_user["_id"])
-    reminders = await calendar_tool.get_overdue_reminders(user_id)
-    return {"reminders": reminders, "count": len(reminders)}
+    result = get_event(event_id, user_id)
+    return json.loads(result)
 
 
-@router.get("/calendar/reminders/{reminder_id}")
-async def get_reminder(
-    reminder_id: str,
+@router.put("/calendar/events/{event_id}")
+async def api_update_event(
+    event_id: str,
+    request: UpdateEventRequest,
     current_user: dict = Depends(get_current_user)
 ):
-    """Get a specific reminder by ID."""
+    """Update an event."""
     user_id = str(current_user["_id"])
-    reminder = await calendar_tool.get_reminder(user_id, reminder_id)
-    
-    if not reminder:
-        raise HTTPException(status_code=404, detail="Reminder not found")
-    
-    return reminder
+    result = update_event(
+        event_id=event_id,
+        title=request.title,
+        start_time=request.start_time,
+        end_time=request.end_time,
+        description=request.description,
+        location=request.location,
+        status=request.status,
+        user_id=user_id
+    )
+    return json.loads(result)
 
 
-@router.put("/calendar/reminders/{reminder_id}")
-async def update_reminder(
-    reminder_id: str,
-    updates: ReminderUpdate,
+@router.delete("/calendar/events/{event_id}")
+async def api_delete_event(
+    event_id: str,
     current_user: dict = Depends(get_current_user)
 ):
-    """Update a reminder."""
+    """Delete an event."""
     user_id = str(current_user["_id"])
-    
-    update_data = {k: v for k, v in updates.dict().items() if v is not None}
-    result = await calendar_tool.update_reminder(user_id, reminder_id, **update_data)
-    
-    if not result:
-        raise HTTPException(status_code=404, detail="Reminder not found")
-    
-    return {"status": "success", "reminder": result}
-
-
-@router.put("/calendar/reminders/{reminder_id}/complete")
-async def complete_reminder(
-    reminder_id: str,
-    current_user: dict = Depends(get_current_user)
-):
-    """Mark a reminder as complete."""
-    user_id = str(current_user["_id"])
-    result = await calendar_tool.mark_complete(user_id, reminder_id)
-    
-    if not result:
-        raise HTTPException(status_code=404, detail="Reminder not found")
-    
-    return {"status": "success", "message": "Reminder marked as complete"}
-
-
-@router.delete("/calendar/reminders/{reminder_id}")
-async def delete_reminder(
-    reminder_id: str,
-    current_user: dict = Depends(get_current_user)
-):
-    """Delete a reminder."""
-    user_id = str(current_user["_id"])
-    deleted = await calendar_tool.delete_reminder(user_id, reminder_id)
-    
-    if not deleted:
-        raise HTTPException(status_code=404, detail="Reminder not found")
-    
-    return {"status": "success", "message": "Reminder deleted"}
+    result = delete_event(event_id, user_id)
+    return json.loads(result)
 
 
 @router.post("/calendar/schedule")
-async def generate_study_schedule(
-    request: StudyScheduleRequest,
+async def api_create_study_schedule(
+    request: CreateScheduleRequest,
     current_user: dict = Depends(get_current_user)
 ):
-    """Generate a study schedule using MCP Calendar Tool."""
+    """Generate a study schedule."""
     user_id = str(current_user["_id"])
-    
-    reminders = await calendar_tool.generate_study_schedule(
-        user_id=user_id,
+    result = create_study_schedule(
         subjects=request.subjects,
         start_date=request.start_date,
         days=request.days,
-        hours_per_day=request.hours_per_day,
-        time_of_day=request.time_of_day
+        hours_per_session=request.hours_per_session,
+        start_hour=request.start_hour,
+        user_id=user_id
     )
-    
-    return {
-        "status": "success",
-        "message": f"Created {len(reminders)} study sessions",
-        "reminders": reminders
-    }
+    return json.loads(result)
 
 
-@router.get("/calendar/stats")
-async def get_calendar_stats(
-    current_user: dict = Depends(get_current_user)
-):
-    """Get calendar/reminder statistics."""
-    user_id = str(current_user["_id"])
-    stats = await calendar_tool.get_statistics(user_id)
-    return stats
-
-
-# ========== File Tool Endpoints ==========
-
-@router.post("/files/save")
-async def save_note(
-    request: SaveNoteRequest,
-    current_user: dict = Depends(get_current_user)
-):
-    """Save a note using MCP File Tool."""
-    user_id = str(current_user["_id"])
-    
-    result = await file_tool.save_notes(
-        user_id=user_id,
-        title=request.title,
-        content=request.content,
-        note_type=request.note_type
-    )
-    
-    return {"status": "success", "file": result}
-
-
-@router.get("/files/list")
-async def list_files(
-    category: Optional[str] = None,
-    current_user: dict = Depends(get_current_user)
-):
-    """List all saved files."""
-    user_id = str(current_user["_id"])
-    files = await file_tool.list_files(user_id, category)
-    return {"files": files, "count": len(files)}
-
-
-@router.get("/files/get/{category}/{filename}")
-async def get_file(
-    category: str,
-    filename: str,
-    current_user: dict = Depends(get_current_user)
-):
-    """Get a specific file's content."""
-    user_id = str(current_user["_id"])
-    file_data = await file_tool.get_file(user_id, category, filename)
-    
-    if not file_data:
-        raise HTTPException(status_code=404, detail="File not found")
-    
-    return file_data
-
-
-@router.delete("/files/{category}/{filename}")
-async def delete_file(
-    category: str,
-    filename: str,
-    current_user: dict = Depends(get_current_user)
-):
-    """Delete a saved file."""
-    user_id = str(current_user["_id"])
-    deleted = await file_tool.delete_file(user_id, category, filename)
-    
-    if not deleted:
-        raise HTTPException(status_code=404, detail="File not found")
-    
-    return {"status": "success", "message": "File deleted"}
-
-
-@router.get("/files/search")
-async def search_files(
-    q: str,
-    current_user: dict = Depends(get_current_user)
-):
-    """Search files by query."""
-    user_id = str(current_user["_id"])
-    results = await file_tool.search_files(user_id, q)
-    return {"results": results, "count": len(results)}
-
-
-@router.get("/files/stats")
-async def get_file_stats(
-    current_user: dict = Depends(get_current_user)
-):
-    """Get file storage statistics."""
-    user_id = str(current_user["_id"])
-    stats = await file_tool.get_statistics(user_id)
-    return stats
-
-
-# ========== Drive Tool Endpoints ==========
+# ==================== Drive Endpoints ====================
 
 @router.post("/drive/upload")
-async def upload_to_drive(
-    file: UploadFile = File(...),
-    folder: str = Form("Documents"),
-    description: Optional[str] = Form(None),
+async def api_upload_to_drive(
+    request: UploadToDriveRequest,
     current_user: dict = Depends(get_current_user)
 ):
-    """Upload a file to MCP Drive."""
+    """Upload a file to Drive."""
     user_id = str(current_user["_id"])
-    content = await file.read()
-    
-    result = await drive_tool.upload_file(
-        user_id=user_id,
-        filename=file.filename,
-        content=content,
-        folder=folder,
-        description=description
+    result = upload_file(
+        filename=request.filename,
+        content=request.content,
+        folder=request.folder,
+        is_base64=request.is_base64,
+        description=request.description,
+        user_id=user_id
     )
-    
-    return {"status": "success", "file": result}
-
-
-@router.post("/drive/upload-text")
-async def upload_text_to_drive(
-    filename: str,
-    content: str,
-    folder: str = "Notes",
-    current_user: dict = Depends(get_current_user)
-):
-    """Upload text content as a file to MCP Drive."""
-    user_id = str(current_user["_id"])
-    
-    result = await drive_tool.upload_text_file(
-        user_id=user_id,
-        filename=filename,
-        content=content,
-        folder=folder
-    )
-    
-    return {"status": "success", "file": result}
+    return json.loads(result)
 
 
 @router.get("/drive/download/{file_id}")
-async def download_from_drive(
+async def api_download_from_drive(
     file_id: str,
     current_user: dict = Depends(get_current_user)
 ):
-    """Download a file from MCP Drive."""
+    """Download a file from Drive."""
     user_id = str(current_user["_id"])
-    file_data = await drive_tool.download_file(user_id, file_id)
-    
-    if not file_data:
-        raise HTTPException(status_code=404, detail="File not found")
-    
-    # Return content as base64 for JSON response
-    import base64
-    return {
-        "filename": file_data["filename"],
-        "content": base64.b64encode(file_data["content"]).decode('utf-8'),
-        "mime_type": file_data["mime_type"],
-        "size": file_data["size"]
-    }
+    result = download_file(file_id, user_id)
+    return json.loads(result)
 
 
 @router.get("/drive/files")
-async def list_drive_files(
+async def api_list_drive_files(
+    folder: Optional[str] = None,
     current_user: dict = Depends(get_current_user)
 ):
-    """List all files in MCP Drive."""
+    """List files in Drive."""
     user_id = str(current_user["_id"])
-    files = await drive_tool.list_all_files(user_id)
-    return {"files": files, "count": len(files)}
+    result = list_files(folder, user_id)
+    return json.loads(result)
 
 
-@router.get("/drive/folder/{folder_path:path}")
-async def list_folder_contents(
-    folder_path: str = None,
+@router.get("/drive/folders")
+async def api_list_folders(
     current_user: dict = Depends(get_current_user)
 ):
-    """List contents of a folder in MCP Drive."""
+    """List all folders."""
     user_id = str(current_user["_id"])
-    contents = await drive_tool.list_folder(user_id, folder_path)
-    return contents
+    result = list_folders(user_id)
+    return json.loads(result)
 
 
 @router.post("/drive/folders")
-async def create_folder(
+async def api_create_folder(
     request: CreateFolderRequest,
     current_user: dict = Depends(get_current_user)
 ):
-    """Create a new folder in MCP Drive."""
+    """Create a folder."""
     user_id = str(current_user["_id"])
-    
-    result = await drive_tool.create_folder(
-        user_id=user_id,
-        folder_name=request.folder_name,
-        parent_folder=request.parent_folder
-    )
-    
-    return {"status": "success", "folder": result}
+    result = create_folder(request.name, request.parent, user_id)
+    return json.loads(result)
 
 
 @router.delete("/drive/files/{file_id}")
-async def delete_drive_file(
+async def api_delete_drive_file(
     file_id: str,
     current_user: dict = Depends(get_current_user)
 ):
-    """Delete a file from MCP Drive."""
+    """Delete a file from Drive."""
     user_id = str(current_user["_id"])
-    deleted = await drive_tool.delete_file(user_id, file_id)
-    
-    if not deleted:
-        raise HTTPException(status_code=404, detail="File not found")
-    
-    return {"status": "success", "message": "File deleted"}
+    result = drive_delete_file(file_id, user_id)
+    return json.loads(result)
 
 
 @router.put("/drive/files/{file_id}/move")
-async def move_drive_file(
+async def api_move_file(
     file_id: str,
     new_folder: str,
     current_user: dict = Depends(get_current_user)
 ):
-    """Move a file to a different folder."""
+    """Move a file to another folder."""
     user_id = str(current_user["_id"])
-    result = await drive_tool.move_file(user_id, file_id, new_folder)
-    
-    if not result:
-        raise HTTPException(status_code=404, detail="File not found")
-    
-    return {"status": "success", "file": result}
+    result = move_file(file_id, new_folder, user_id)
+    return json.loads(result)
 
 
 @router.get("/drive/search")
-async def search_drive(
-    q: str,
+async def api_search_drive(
+    query: str,
     current_user: dict = Depends(get_current_user)
 ):
-    """Search files in MCP Drive."""
+    """Search files in Drive."""
     user_id = str(current_user["_id"])
-    results = await drive_tool.search_files(user_id, q)
-    return {"results": results, "count": len(results)}
+    result = search_drive(query, user_id)
+    return json.loads(result)
 
 
 @router.get("/drive/stats")
-async def get_drive_stats(
+async def api_get_drive_stats(
     current_user: dict = Depends(get_current_user)
 ):
-    """Get MCP Drive storage statistics."""
+    """Get Drive statistics."""
     user_id = str(current_user["_id"])
-    stats = await drive_tool.get_storage_stats(user_id)
-    return stats
+    result = get_drive_stats(user_id)
+    return json.loads(result)
 
 
-# ========== Combined Stats Endpoint ==========
+@router.post("/drive/files/{file_id}/share")
+async def api_share_file(
+    file_id: str,
+    share_with: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Share a file with another user."""
+    user_id = str(current_user["_id"])
+    result = share_file(file_id, share_with, user_id)
+    return json.loads(result)
+
+
+# ==================== Combined Stats ====================
 
 @router.get("/stats")
-async def get_all_mcp_stats(
+async def api_get_all_stats(
     current_user: dict = Depends(get_current_user)
 ):
-    """Get combined statistics from all MCP tools."""
+    """Get combined MCP tool statistics."""
     user_id = str(current_user["_id"])
     
-    calendar_stats = await calendar_tool.get_statistics(user_id)
-    file_stats = await file_tool.get_statistics(user_id)
-    drive_stats = await drive_tool.get_storage_stats(user_id)
+    drive_stats = json.loads(get_drive_stats(user_id))
+    calendar_events = json.loads(list_events(user_id=user_id))
     
     return {
-        "calendar": calendar_stats,
-        "files": file_stats,
-        "drive": drive_stats
+        "drive": drive_stats,
+        "calendar": {
+            "total_events": calendar_events.get("count", 0)
+        }
     }

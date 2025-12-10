@@ -486,5 +486,5 @@ def share_file(file_id: str, share_with: str, user_id: str = "default") -> str:
 
 # Run server
 if __name__ == "__main__":
-    print("☁️ Starting Drive MCP Server on port 9002...")
-    mcp.run(transport="sse", host="0.0.0.0", port=9002)
+    print("[Drive] Starting MCP Server (stdio transport)...")
+    mcp.run()
