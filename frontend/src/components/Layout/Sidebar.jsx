@@ -63,20 +63,16 @@ export default function Sidebar({ isOpen, onClose }) {
                                 onClick={onClose}
                                 className={({ isActive }) => `
                                     group flex items-center gap-3 px-4 py-3 rounded-xl
-                                    font-medium transition-all duration-200
+                                    font-medium transition-all duration-300 ease-in-out
                                     ${isActive
-                                        ? `bg-gradient-to-r ${item.color} text-white shadow-lg`
-                                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800/50'
+                                        ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/25 scale-[1.02]'
+                                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800/50 hover:scale-[1.02]'
                                     }
                                 `}
                             >
-                                <div className={({ isActive }) => `
-                                    p-1.5 rounded-lg transition-colors
-                                    ${!isActive && `bg-gradient-to-br ${item.color} bg-opacity-10`}
-                                `}>
-                                    <item.icon className="w-5 h-5" />
-                                </div>
+                                <item.icon className="w-5 h-5" />
                                 <span>{item.label}</span>
+
                             </NavLink>
                         ))}
                     </nav>

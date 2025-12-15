@@ -94,8 +94,8 @@ export default function Home() {
             <nav className="relative z-50 border-b border-gray-200/50 dark:border-gray-800/50 bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
                     <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <div className="relative group">
+                        <Link to="/" className="flex items-center gap-3 group">
+                            <div className="relative">
                                 <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-purple-500/25 group-hover:shadow-purple-500/40 transition-all duration-300">
                                     <BookOpen className="w-6 h-6 text-white" />
                                 </div>
@@ -104,7 +104,7 @@ export default function Home() {
                             <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 dark:from-blue-400 dark:via-purple-400 dark:to-pink-400 bg-clip-text text-transparent">
                                 StudyAI
                             </span>
-                        </div>
+                        </Link>
 
                         <div className="flex items-center gap-3">
                             {/* Theme toggle */}

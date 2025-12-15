@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { uploadAPI, notesAPI } from '../services/api';
+import { uploadAPI, notesAPI, mcpAPI, googleAPI } from '../services/api';
 import {
     Upload,
     MessageSquare,
@@ -30,6 +30,8 @@ export default function Dashboard() {
     const [stats, setStats] = useState({
         documents: 0,
         notes: 0,
+        savedNotes: 0,
+        upcomingEvents: 0,
         recentDocs: [],
         recentNotes: []
     });
@@ -41,16 +43,30 @@ export default function Dashboard() {
 
     const fetchStats = async () => {
         try {
-            const [docs, notes] = await Promise.all([
+            const [docs, savedNotes, eventsData, googleEventsData] = await Promise.all([
                 uploadAPI.getDocuments().catch(() => []),
-                notesAPI.getAll().catch(() => [])
+                notesAPI.getAll().catch(() => []),
+                mcpAPI.getEvents().catch(() => ({ events: [] })),
+                googleAPI.getGoogleEvents().catch(() => ({ events: [] }))
             ]);
+
+            // Count saved notes (notesAPI.getAll returns array directly)
+            const savedNotesCount = Array.isArray(savedNotes) ? savedNotes.length : 0;
+
+            // Count upcoming events (combine local and Google events)
+            const localEvents = eventsData?.events || [];
+            const googleEvents = googleEventsData?.events || [];
+            const allEvents = [...localEvents, ...googleEvents];
+            const upcomingEvents = allEvents.filter(e =>
+                new Date(e.start_time || e.start?.dateTime) >= new Date()
+            ).length;
 
             setStats({
                 documents: docs.length || 0,
-                notes: notes.length || 0,
+                savedNotes: savedNotesCount,
+                upcomingEvents: upcomingEvents,
                 recentDocs: (docs || []).slice(0, 5),
-                recentNotes: (notes || []).slice(0, 5)
+                recentNotes: (savedNotes || []).slice(0, 5)
             });
         } catch (error) {
             console.error('Failed to fetch stats:', error);
@@ -69,6 +85,20 @@ export default function Dashboard() {
     const formatDate = (date) => {
         return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     };
+
+    // Skeleton loading component
+    const StatSkeleton = () => (
+        <div className="p-5 bg-white dark:bg-gray-900/50 rounded-2xl border border-gray-200 dark:border-gray-800 animate-pulse">
+            <div className="flex items-start justify-between">
+                <div className="space-y-2">
+                    <div className="h-4 w-20 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                    <div className="h-8 w-12 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                </div>
+                <div className="w-11 h-11 bg-gray-200 dark:bg-gray-700 rounded-xl"></div>
+            </div>
+        </div>
+    );
+
 
     return (
         <div className="space-y-6 animate-fadeIn">
@@ -108,28 +138,38 @@ export default function Dashboard() {
 
             {/* Stats Cards */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                {[
-                    { label: 'Documents', value: stats.documents, icon: File, color: 'from-blue-500 to-cyan-500' },
-                    { label: 'Saved Notes', value: stats.notes, icon: BookOpen, color: 'from-purple-500 to-pink-500' },
-                    { label: 'Study Hours', value: '12.5', icon: Clock, color: 'from-emerald-500 to-teal-500' },
-                    { label: 'AI Chats', value: '45', icon: Zap, color: 'from-orange-500 to-red-500' },
-                ].map((stat, i) => (
-                    <div
-                        key={i}
-                        className="p-5 bg-white dark:bg-gray-900/50 rounded-2xl border border-gray-200 dark:border-gray-800 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group"
-                    >
-                        <div className="flex items-start justify-between">
-                            <div>
-                                <p className="text-gray-500 dark:text-gray-400 text-sm">{stat.label}</p>
-                                <p className="text-3xl font-bold text-gray-900 dark:text-white mt-1">{stat.value}</p>
-                            </div>
-                            <div className={`p-3 rounded-xl bg-gradient-to-br ${stat.color} shadow-lg group-hover:scale-110 transition-transform`}>
-                                <stat.icon className="w-5 h-5 text-white" />
+                {loading ? (
+                    <>
+                        <StatSkeleton />
+                        <StatSkeleton />
+                        <StatSkeleton />
+                        <StatSkeleton />
+                    </>
+                ) : (
+                    [
+                        { label: 'Documents', value: stats.documents, icon: File, color: 'from-blue-500 to-cyan-500' },
+                        { label: 'Saved Notes', value: stats.savedNotes, icon: BookOpen, color: 'from-purple-500 to-pink-500' },
+                        { label: 'Upcoming Events', value: stats.upcomingEvents, icon: Calendar, color: 'from-emerald-500 to-teal-500' },
+                        { label: 'Recent Files', value: stats.recentDocs.length, icon: FileText, color: 'from-orange-500 to-red-500' },
+                    ].map((stat, i) => (
+                        <div
+                            key={i}
+                            className="p-5 bg-white dark:bg-gray-900/50 rounded-2xl border border-gray-200 dark:border-gray-800 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group"
+                        >
+                            <div className="flex items-start justify-between">
+                                <div>
+                                    <p className="text-gray-500 dark:text-gray-400 text-sm">{stat.label}</p>
+                                    <p className="text-3xl font-bold text-gray-900 dark:text-white mt-1">{stat.value}</p>
+                                </div>
+                                <div className={`p-3 rounded-xl bg-gradient-to-br ${stat.color} shadow-lg group-hover:scale-110 transition-transform`}>
+                                    <stat.icon className="w-5 h-5 text-white" />
+                                </div>
                             </div>
                         </div>
-                    </div>
-                ))}
+                    ))
+                )}
             </div>
+
 
             {/* Quick Actions */}
             <div>

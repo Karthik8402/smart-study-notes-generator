@@ -165,18 +165,23 @@ export default function Upload() {
 
     return (
         <div className="space-y-6 animate-fade-in">
-            {/* Header */}
-            <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl gradient-bg flex items-center justify-center">
-                    <UploadIcon className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                    <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-                        Upload Study Materials
-                    </h1>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                        Add your PDFs, PowerPoints, images, or YouTube links
-                    </p>
+            {/* Header with Theme Awareness */}
+            <div className="relative overflow-hidden rounded-2xl bg-white/50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 backdrop-blur-xl p-6 transition-colors duration-300">
+                <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-pink-500/5 to-blue-500/5"></div>
+                <div className="relative flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <div className="p-3 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 shadow-lg shadow-purple-500/25">
+                            <UploadIcon className="w-8 h-8 text-white" />
+                        </div>
+                        <div>
+                            <h1 className="text-3xl font-bold text-gray-900 dark:text-white transition-colors duration-300">
+                                Upload Study Materials
+                            </h1>
+                            <p className="text-gray-500 dark:text-gray-400 mt-1 transition-colors duration-300">
+                                Add your PDFs, PowerPoints, images, or YouTube links
+                            </p>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -192,8 +197,8 @@ export default function Upload() {
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
                             className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${activeTab === tab.id
-                                    ? 'bg-primary-100 dark:bg-primary-900/50 text-primary-700 dark:text-primary-300'
-                                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
+                                ? 'bg-primary-100 dark:bg-primary-900/50 text-primary-700 dark:text-primary-300'
+                                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
                                 }`}
                         >
                             <tab.icon className="w-4 h-4" />
@@ -208,8 +213,8 @@ export default function Upload() {
                         <div
                             {...getRootProps()}
                             className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors ${isDragActive
-                                    ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
-                                    : 'border-gray-300 dark:border-gray-700 hover:border-primary-400'
+                                ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
+                                : 'border-gray-300 dark:border-gray-700 hover:border-primary-400'
                                 }`}
                         >
                             <input {...getInputProps()} />

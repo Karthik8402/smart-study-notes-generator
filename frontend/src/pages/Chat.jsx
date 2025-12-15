@@ -1,6 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { chatAPI } from '../services/api';
 import ReactMarkdown from 'react-markdown';
+import { jsPDF } from 'jspdf';
+import { Document, Packer, Paragraph, TextRun, AlignmentType, BorderStyle } from 'docx';
+import { saveAs } from 'file-saver';
 import {
     Send,
     Loader2,
@@ -11,7 +14,10 @@ import {
     Trash2,
     ChevronDown,
     FileText,
-    Sparkles
+    Sparkles,
+    Download,
+    FileType,
+    File
 } from 'lucide-react';
 
 export default function Chat() {
@@ -21,6 +27,7 @@ export default function Chat() {
     const [sessionId, setSessionId] = useState(null);
     const [sessions, setSessions] = useState([]);
     const [showSessions, setShowSessions] = useState(false);
+    const [exportDropdown, setExportDropdown] = useState(null);
     const messagesEndRef = useRef(null);
 
     useEffect(() => {
@@ -41,6 +48,242 @@ export default function Chat() {
             setSessions(data);
         } catch (error) {
             console.error('Error fetching sessions:', error);
+        }
+    };
+
+    // Export chat history to PDF
+    const exportChatToPDF = async (session, e) => {
+        e.stopPropagation();
+        try {
+            const history = await chatAPI.getHistory(session.session_id);
+            const chatMessages = history.messages || [];
+
+            const doc = new jsPDF();
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const pageHeight = doc.internal.pageSize.getHeight();
+            let yPos = 20;
+
+            const checkNewPage = (requiredSpace = 20) => {
+                if (yPos > pageHeight - 40 - requiredSpace) {
+                    doc.addPage();
+                    yPos = 20;
+                }
+            };
+
+            // Header
+            doc.setFillColor(124, 58, 237);
+            doc.rect(0, 0, pageWidth, 35, 'F');
+            doc.setFillColor(167, 139, 250);
+            doc.rect(0, 33, pageWidth, 4, 'F');
+
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(18);
+            doc.setFont(undefined, 'bold');
+            doc.text('💬 Chat Conversation', 15, 18);
+
+            doc.setFontSize(10);
+            doc.setFont(undefined, 'normal');
+            const dateStr = new Date(session.updated_at).toLocaleDateString('en-US', {
+                year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
+            });
+            doc.text(dateStr, 15, 28);
+
+            yPos = 50;
+
+            // Chat messages
+            chatMessages.forEach((msg, idx) => {
+                checkNewPage(40);
+
+                const isUser = msg.role === 'user';
+
+                // Role badge
+                if (isUser) {
+                    doc.setFillColor(79, 70, 229);
+                } else {
+                    doc.setFillColor(16, 185, 129);
+                }
+                doc.roundedRect(15, yPos - 4, 30, 10, 2, 2, 'F');
+                doc.setTextColor(255, 255, 255);
+                doc.setFontSize(8);
+                doc.setFont(undefined, 'bold');
+                doc.text(isUser ? 'YOU' : 'AI', 25, yPos + 2);
+
+                yPos += 12;
+
+                // Message content
+                doc.setTextColor(55, 65, 81);
+                doc.setFontSize(10);
+                doc.setFont(undefined, 'normal');
+
+                const cleanContent = msg.content
+                    .replace(/\*\*(.*?)\*\*/g, '$1')
+                    .replace(/\*(.*?)\*/g, '$1')
+                    .replace(/`(.*?)`/g, '$1')
+                    .replace(/#{1,6}\s/g, '');
+
+                const contentLines = doc.splitTextToSize(cleanContent, pageWidth - 35);
+
+                contentLines.forEach(line => {
+                    checkNewPage(8);
+                    doc.text(line, 20, yPos);
+                    yPos += 5;
+                });
+
+                yPos += 8;
+
+                // Separator
+                if (idx < chatMessages.length - 1) {
+                    doc.setDrawColor(229, 231, 235);
+                    doc.setLineWidth(0.3);
+                    doc.line(15, yPos, pageWidth - 15, yPos);
+                    yPos += 8;
+                }
+            });
+
+            // Footer
+            const pageCount = doc.internal.getNumberOfPages();
+            for (let i = 1; i <= pageCount; i++) {
+                doc.setPage(i);
+                doc.setDrawColor(229, 231, 235);
+                doc.line(15, pageHeight - 15, pageWidth - 15, pageHeight - 15);
+                doc.setFontSize(8);
+                doc.setTextColor(156, 163, 175);
+                doc.text('📚 Smart Study Notes - Chat Export', 15, pageHeight - 8);
+                doc.text(`Page ${i} of ${pageCount}`, pageWidth - 15, pageHeight - 8, { align: 'right' });
+            }
+
+            doc.save(`Chat_${new Date().toISOString().split('T')[0]}.pdf`);
+            setExportDropdown(null);
+        } catch (error) {
+            console.error('Error exporting chat to PDF:', error);
+        }
+    };
+
+    // Export chat history to Word
+    const exportChatToWord = async (session, e) => {
+        e.stopPropagation();
+        try {
+            const history = await chatAPI.getHistory(session.session_id);
+            const chatMessages = history.messages || [];
+
+            const children = [];
+
+            // Title
+            children.push(
+                new Paragraph({
+                    children: [
+                        new TextRun({
+                            text: '💬 Chat Conversation',
+                            bold: true,
+                            size: 48,
+                            color: '7C3AED',
+                        }),
+                    ],
+                    spacing: { after: 100 },
+                    border: {
+                        bottom: { color: '7C3AED', style: BorderStyle.SINGLE, size: 12 },
+                    },
+                })
+            );
+
+            // Date
+            const dateStr = new Date(session.updated_at).toLocaleDateString('en-US', {
+                year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
+            });
+            children.push(
+                new Paragraph({
+                    children: [
+                        new TextRun({
+                            text: dateStr,
+                            size: 20,
+                            color: '6B7280',
+                            italics: true,
+                        }),
+                    ],
+                    spacing: { after: 400 },
+                })
+            );
+
+            // Messages
+            chatMessages.forEach((msg) => {
+                const isUser = msg.role === 'user';
+
+                // Role header
+                children.push(
+                    new Paragraph({
+                        children: [
+                            new TextRun({
+                                text: isUser ? '👤 You' : '🤖 AI Assistant',
+                                bold: true,
+                                size: 24,
+                                color: isUser ? '4F46E5' : '10B981',
+                            }),
+                        ],
+                        spacing: { before: 300, after: 100 },
+                        shading: { fill: isUser ? 'EEF2FF' : 'ECFDF5' },
+                    })
+                );
+
+                // Message content
+                const cleanContent = msg.content
+                    .replace(/\*\*(.*?)\*\*/g, '$1')
+                    .replace(/\*(.*?)\*/g, '$1')
+                    .replace(/`(.*?)`/g, '$1');
+
+                const paragraphs = cleanContent.split('\n');
+                paragraphs.forEach(para => {
+                    if (para.trim()) {
+                        children.push(
+                            new Paragraph({
+                                children: [
+                                    new TextRun({
+                                        text: para.trim(),
+                                        size: 22,
+                                        color: '374151',
+                                    }),
+                                ],
+                                indent: { left: 200 },
+                                spacing: { after: 80 },
+                            })
+                        );
+                    }
+                });
+            });
+
+            // Footer
+            children.push(
+                new Paragraph({
+                    spacing: { before: 400 },
+                    border: {
+                        bottom: { color: 'D1D5DB', style: BorderStyle.SINGLE, size: 12 },
+                    },
+                })
+            );
+
+            children.push(
+                new Paragraph({
+                    children: [
+                        new TextRun({
+                            text: '📚 Exported from Smart Study Notes',
+                            italics: true,
+                            size: 18,
+                            color: '9CA3AF',
+                        }),
+                    ],
+                    alignment: AlignmentType.CENTER,
+                    spacing: { before: 200 },
+                })
+            );
+
+            const wordDoc = new Document({
+                sections: [{ properties: {}, children: children }],
+            });
+
+            const blob = await Packer.toBlob(wordDoc);
+            saveAs(blob, `Chat_${new Date().toISOString().split('T')[0]}.docx`);
+            setExportDropdown(null);
+        } catch (error) {
+            console.error('Error exporting chat to Word:', error);
         }
     };
 
@@ -121,72 +364,114 @@ export default function Chat() {
 
     return (
         <div className="h-[calc(100vh-8rem)] flex flex-col">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl gradient-bg flex items-center justify-center">
-                        <MessageSquare className="w-5 h-5 text-white" />
+            {/* Header with Theme Awareness */}
+            <div className="relative overflow-hidden rounded-2xl bg-white/50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 backdrop-blur-xl p-6 mb-4 transition-colors duration-300">
+                <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-pink-500/5 to-blue-500/5"></div>
+                <div className="relative flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <div className="p-3 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 shadow-lg shadow-purple-500/25">
+                            <MessageSquare className="w-8 h-8 text-white" />
+                        </div>
+                        <div>
+                            <h1 className="text-3xl font-bold text-gray-900 dark:text-white transition-colors duration-300">
+                                Chat with AI
+                            </h1>
+                            <p className="text-gray-500 dark:text-gray-400 mt-1 transition-colors duration-300">
+                                Ask questions about your study materials
+                            </p>
+                        </div>
                     </div>
-                    <div>
-                        <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-                            Chat with AI
-                        </h1>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                            Ask questions about your study materials
-                        </p>
-                    </div>
-                </div>
 
-                <div className="flex items-center gap-2">
-                    <button
-                        onClick={startNewChat}
-                        className="btn-secondary flex items-center gap-2 py-2 px-4"
-                    >
-                        <Plus className="w-4 h-4" />
-                        New Chat
-                    </button>
-
-                    <div className="relative">
+                    <div className="flex items-center gap-3">
                         <button
-                            onClick={() => setShowSessions(!showSessions)}
-                            className="btn-secondary flex items-center gap-2 py-2 px-4"
+                            onClick={startNewChat}
+                            className="group px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-emerald-500/25 transition-all duration-300 flex items-center gap-2"
                         >
-                            History
-                            <ChevronDown className={`w-4 h-4 transition-transform ${showSessions ? 'rotate-180' : ''}`} />
+                            <Plus className="w-4 h-4 group-hover:rotate-90 transition-transform" />
+                            New Chat
                         </button>
 
-                        {showSessions && (
-                            <div className="absolute right-0 mt-2 w-72 bg-white dark:bg-gray-900 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 max-h-80 overflow-y-auto z-10">
-                                {sessions.length > 0 ? (
-                                    sessions.map((session) => (
-                                        <div
-                                            key={session.session_id}
-                                            onClick={() => loadSession(session.session_id)}
-                                            className="flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer border-b border-gray-100 dark:border-gray-800 last:border-0"
-                                        >
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                                                    {session.preview || 'Chat session'}
-                                                </p>
-                                                <p className="text-xs text-gray-500 dark:text-gray-400">
-                                                    {new Date(session.updated_at).toLocaleDateString()}
-                                                </p>
-                                            </div>
-                                            <button
-                                                onClick={(e) => deleteSession(session.session_id, e)}
-                                                className="p-1 text-gray-400 hover:text-red-500"
+                        <div className="relative">
+                            <button
+                                onClick={() => setShowSessions(!showSessions)}
+                                className="px-4 py-2.5 bg-white dark:bg-gray-800 text-gray-700 dark:text-white rounded-xl font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-300 flex items-center gap-2 border border-gray-200 dark:border-gray-700"
+                            >
+                                History
+                                <ChevronDown className={`w-4 h-4 transition-transform ${showSessions ? 'rotate-180' : ''}`} />
+                            </button>
+
+                            {showSessions && (
+                                <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-900 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 max-h-96 overflow-y-auto z-10">
+                                    {sessions.length > 0 ? (
+                                        sessions.map((session) => (
+                                            <div
+                                                key={session.session_id}
+                                                className="p-3 hover:bg-gray-50 dark:hover:bg-gray-800 border-b border-gray-100 dark:border-gray-800 last:border-0"
                                             >
-                                                <Trash2 className="w-4 h-4" />
-                                            </button>
-                                        </div>
-                                    ))
-                                ) : (
-                                    <p className="p-4 text-sm text-gray-500 dark:text-gray-400 text-center">
-                                        No chat history yet
-                                    </p>
-                                )}
-                            </div>
-                        )}
+                                                <div
+                                                    onClick={() => loadSession(session.session_id)}
+                                                    className="flex items-center justify-between cursor-pointer"
+                                                >
+                                                    <div className="flex-1 min-w-0 mr-2">
+                                                        <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                                                            {session.preview || 'Chat session'}
+                                                        </p>
+                                                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                                                            {new Date(session.updated_at).toLocaleDateString()}
+                                                        </p>
+                                                    </div>
+                                                    <div className="flex items-center gap-1">
+                                                        {/* Export dropdown */}
+                                                        <div className="relative" onClick={(e) => e.stopPropagation()}>
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setExportDropdown(exportDropdown === session.session_id ? null : session.session_id);
+                                                                }}
+                                                                className="p-1.5 text-gray-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 rounded-lg transition"
+                                                                title="Export chat"
+                                                            >
+                                                                <Download className="w-4 h-4" />
+                                                            </button>
+                                                            {exportDropdown === session.session_id && (
+                                                                <div className="absolute right-0 top-full mt-1 w-36 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden z-20 animate-fadeIn">
+                                                                    <button
+                                                                        onClick={(e) => exportChatToPDF(session, e)}
+                                                                        className="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-red-50 dark:hover:bg-red-900/30 flex items-center gap-2 transition"
+                                                                    >
+                                                                        <FileType className="w-4 h-4 text-red-500" />
+                                                                        Export PDF
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={(e) => exportChatToWord(session, e)}
+                                                                        className="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 flex items-center gap-2 transition"
+                                                                    >
+                                                                        <File className="w-4 h-4 text-blue-500" />
+                                                                        Export Word
+                                                                    </button>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        {/* Delete button */}
+                                                        <button
+                                                            onClick={(e) => deleteSession(session.session_id, e)}
+                                                            className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition"
+                                                            title="Delete chat"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <p className="p-4 text-sm text-gray-500 dark:text-gray-400 text-center">
+                                            No chat history yet
+                                        </p>
+                                    )}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>

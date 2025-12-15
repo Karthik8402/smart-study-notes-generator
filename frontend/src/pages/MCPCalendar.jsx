@@ -146,8 +146,14 @@ export default function MCPCalendar() {
     const handleComplete = async (eventId) => {
         try {
             if (useGoogle) {
-                // Google Calendar doesn't have a "complete" status, so we just refresh
-                alert('Google Calendar events cannot be marked as "completed". Consider deleting or updating the event.');
+                // For Google Calendar, mark as completed by adding [DONE] prefix to title
+                const event = events.find(e => e.id === eventId);
+                if (event && !event.title.startsWith('[DONE]')) {
+                    await googleAPI.updateGoogleEvent(eventId, {
+                        title: `[DONE] ${event.title}`
+                    });
+                    fetchEvents();
+                }
                 return;
             }
             await mcpAPI.updateEvent(eventId, { status: 'completed' });
@@ -168,83 +174,160 @@ export default function MCPCalendar() {
         });
     };
 
+    // Check if event is completed (either by status or by [DONE] prefix for Google)
+    const isEventCompleted = (event) => {
+        return event.status === 'completed' || event.title?.startsWith('[DONE]');
+    };
+
     const filteredEvents = events.filter(event => {
-        if (activeTab === 'completed') return event.status === 'completed';
+        const completed = isEventCompleted(event);
+        if (activeTab === 'completed') return completed;
         if (activeTab === 'upcoming') {
             const eventDate = new Date(event.start_time);
-            return eventDate >= new Date() && event.status !== 'completed';
+            return eventDate >= new Date() && !completed;
         }
         return true;
     });
 
+
+    // Skeleton components for Calendar page
+    const StatCardSkeleton = () => (
+        <div className="relative overflow-hidden rounded-xl bg-white dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700/50 p-4 animate-pulse">
+            <div className="flex items-center justify-between">
+                <div className="space-y-2">
+                    <div className="h-4 w-20 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                    <div className="h-8 w-12 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                </div>
+                <div className="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
+            </div>
+        </div>
+    );
+
+    const EventCardSkeleton = () => (
+        <div className="p-5 rounded-xl border border-gray-200 dark:border-gray-700/50 bg-white dark:bg-gray-800/50 animate-pulse">
+            <div className="flex items-start justify-between">
+                <div className="flex-1 space-y-3">
+                    <div className="h-5 w-48 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                    <div className="h-4 w-64 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                    <div className="flex items-center gap-4">
+                        <div className="h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                        <div className="h-4 w-20 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                    </div>
+                </div>
+                <div className="flex gap-2">
+                    <div className="w-9 h-9 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
+                    <div className="w-9 h-9 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
+                </div>
+            </div>
+        </div>
+    );
+
     if (loading) {
         return (
-            <div className="flex items-center justify-center h-64">
-                <div className="relative">
-                    <div className="w-16 h-16 border-4 border-purple-500/30 rounded-full"></div>
-                    <div className="absolute top-0 left-0 w-16 h-16 border-4 border-transparent border-t-purple-500 rounded-full animate-spin"></div>
+            <div className="space-y-6 animate-fadeIn">
+                {/* Header Skeleton */}
+                <div className="relative overflow-hidden rounded-2xl bg-white/50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 backdrop-blur-xl p-6">
+                    <div className="flex items-center justify-between animate-pulse">
+                        <div className="flex items-center gap-4">
+                            <div className="w-14 h-14 bg-gray-200 dark:bg-gray-700 rounded-xl"></div>
+                            <div className="space-y-2">
+                                <div className="h-7 w-28 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                                <div className="h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                            </div>
+                        </div>
+                        <div className="flex gap-3">
+                            <div className="h-10 w-36 bg-gray-200 dark:bg-gray-700 rounded-xl"></div>
+                            <div className="h-10 w-28 bg-gray-200 dark:bg-gray-700 rounded-xl"></div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Stats Cards Skeleton */}
+                <div className="grid grid-cols-3 gap-4">
+                    <StatCardSkeleton />
+                    <StatCardSkeleton />
+                    <StatCardSkeleton />
+                </div>
+
+                {/* Tabs Skeleton */}
+                <div className="flex gap-2 animate-pulse">
+                    <div className="h-9 w-16 bg-gray-200 dark:bg-gray-700 rounded-xl"></div>
+                    <div className="h-9 w-24 bg-gray-200 dark:bg-gray-700 rounded-xl"></div>
+                    <div className="h-9 w-24 bg-gray-200 dark:bg-gray-700 rounded-xl"></div>
+                </div>
+
+                {/* Events List Skeleton */}
+                <div className="space-y-4">
+                    <EventCardSkeleton />
+                    <EventCardSkeleton />
+                    <EventCardSkeleton />
                 </div>
             </div>
         );
     }
 
+
     return (
         <div className="space-y-6 animate-fadeIn">
-            {/* Header with Glassmorphism */}
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-600/20 via-pink-500/10 to-blue-600/20 border border-white/10 backdrop-blur-xl p-6">
-                <div className="absolute inset-0 bg-grid-white/5"></div>
-                <div className="relative flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        <div className="p-3 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 shadow-lg shadow-purple-500/25">
-                            <Calendar className="w-8 h-8 text-gray-900 dark:text-white" />
+            {/* Header with Theme Awareness */}
+            <div className="relative overflow-hidden rounded-2xl bg-white/50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 backdrop-blur-xl p-6 transition-colors duration-300">
+                <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-pink-500/5 to-blue-500/5"></div>
+                <div className="relative flex flex-col md:flex-row items-center justify-between gap-6">
+                    <div className="flex items-center gap-4 w-full md:w-auto">
+                        <div className="p-3 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 shadow-lg shadow-purple-500/25 shrink-0">
+                            <Calendar className="w-8 h-8 text-white" />
                         </div>
                         <div>
-                            <h1 className="text-3xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+                            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white transition-colors duration-300">
                                 Calendar
                             </h1>
-                            <p className="text-gray-700 dark:text-gray-600 dark:text-gray-400 mt-1">
-                                {useGoogle ? 'Connected to Google Calendar' : 'Local Calendar'}
+                            <p className="text-gray-500 dark:text-gray-400 mt-1 transition-colors duration-300 text-sm md:text-base">
+                                {useGoogle ? 'Google Calendar' : 'Local Calendar'}
                             </p>
                         </div>
                     </div>
-                    <div className="flex items-center gap-3">
+
+                    <div className="flex flex-wrap items-center gap-4 w-full md:w-auto justify-end">
                         {/* Google Toggle */}
-                        <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700/50">
-                            <span className="text-sm text-gray-700 dark:text-gray-600 dark:text-gray-400">Use Google</span>
-                            <button
-                                onClick={() => setUseGoogle(!useGoogle)}
-                                className={`relative w-12 h-6 rounded-full transition-all ${useGoogle ? 'bg-gradient-to-r from-blue-500 to-green-500' : 'bg-gray-600'
-                                    }`}
-                            >
-                                <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${useGoogle ? 'left-7' : 'left-1'
-                                    }`}></div>
-                            </button>
-                            {useGoogle && (
-                                googleConnected ? (
-                                    <span className="flex items-center gap-1 text-xs text-green-400">
-                                        <Check className="w-3 h-3" /> Connected
-                                    </span>
-                                ) : (
-                                    <button
-                                        onClick={connectGoogle}
-                                        disabled={googleConnecting}
-                                        className="px-2 py-1 text-xs bg-blue-500 text-gray-900 dark:text-white rounded hover:bg-blue-600 transition disabled:opacity-50"
-                                    >
-                                        {googleConnecting ? 'Connecting...' : 'Connect'}
-                                    </button>
-                                )
-                            )}
+                        <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700/50 md:flex flex-1 md:flex-none justify-between md:justify-start">
+                            <span className="text-sm text-gray-700 dark:text-gray-400">Use Google</span>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={() => setUseGoogle(!useGoogle)}
+                                    className={`relative w-12 h-6 rounded-full transition-all ${useGoogle ? 'bg-gradient-to-r from-purple-500 to-pink-500' : 'bg-gray-400 dark:bg-gray-600'
+                                        }`}
+                                >
+                                    <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${useGoogle ? 'left-7' : 'left-1'
+                                        }`}></div>
+                                </button>
+                                {useGoogle && (
+                                    googleConnected ? (
+                                        <span className="flex items-center gap-1 text-xs text-emerald-500 dark:text-emerald-400 font-medium">
+                                            <Check className="w-3 h-3" />
+                                        </span>
+                                    ) : (
+                                        <button
+                                            onClick={connectGoogle}
+                                            disabled={googleConnecting}
+                                            className="px-2 py-1 text-xs bg-purple-500 text-white rounded hover:bg-purple-600 transition disabled:opacity-50"
+                                        >
+                                            {googleConnecting ? '...' : 'Connect'}
+                                        </button>
+                                    )
+                                )}
+                            </div>
                         </div>
+
                         <button
                             onClick={() => setShowScheduleForm(true)}
-                            className="group px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 text-gray-900 dark:text-white rounded-xl font-medium hover:shadow-lg hover:shadow-emerald-500/25 transition-all duration-300 flex items-center gap-2"
+                            className="group px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-emerald-500/25 transition-all duration-300 flex items-center gap-2 flex-1 md:flex-none justify-center"
                         >
                             <BookOpen className="w-4 h-4" />
                             Generate Schedule
                         </button>
                         <button
                             onClick={() => setShowForm(true)}
-                            className="group px-4 py-2.5 bg-gradient-to-r from-purple-500 to-pink-500 text-gray-900 dark:text-white rounded-xl font-medium hover:shadow-lg hover:shadow-purple-500/25 transition-all duration-300 flex items-center gap-2"
+                            className="group px-4 py-2.5 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-purple-500/25 transition-all duration-300 flex items-center gap-2 flex-1 md:flex-none justify-center"
                         >
                             <Plus className="w-4 h-4 group-hover:rotate-90 transition-transform" />
                             New Event
@@ -257,8 +340,8 @@ export default function MCPCalendar() {
             <div className="grid grid-cols-3 gap-4">
                 {[
                     { label: 'Total Events', value: events.length, color: 'from-blue-500 to-cyan-500', icon: Calendar },
-                    { label: 'Upcoming', value: events.filter(e => new Date(e.start_time) >= new Date() && e.status !== 'completed').length, color: 'from-purple-500 to-pink-500', icon: Clock },
-                    { label: 'Completed', value: events.filter(e => e.status === 'completed').length, color: 'from-emerald-500 to-teal-500', icon: Check }
+                    { label: 'Upcoming', value: events.filter(e => new Date(e.start_time) >= new Date() && !isEventCompleted(e)).length, color: 'from-purple-500 to-pink-500', icon: Clock },
+                    { label: 'Completed', value: events.filter(e => isEventCompleted(e)).length, color: 'from-emerald-500 to-teal-500', icon: Check }
                 ].map((stat, i) => (
                     <div key={i} className="relative overflow-hidden rounded-xl bg-white dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700/50 p-4 hover:border-gray-600/50 transition-all group">
                         <div className={`absolute inset-0 bg-gradient-to-br ${stat.color} opacity-0 group-hover:opacity-5 transition-opacity`}></div>
@@ -300,61 +383,71 @@ export default function MCPCalendar() {
                         <p className="text-gray-500 dark:text-gray-500 text-sm mt-1">Create a new event to get started</p>
                     </div>
                 ) : (
-                    filteredEvents.map(event => (
-                        <div
-                            key={event.id}
-                            className={`group p-5 rounded-xl border transition-all duration-300 hover:scale-[1.01] ${event.status === 'completed'
-                                ? 'bg-gray-50 dark:bg-gray-800/20 border-gray-200 dark:border-gray-700/30 opacity-60'
-                                : 'bg-white dark:bg-gray-800/50 border-gray-200 dark:border-gray-700/50 hover:border-purple-500/50 hover:shadow-lg hover:shadow-purple-500/5'
-                                }`}
-                        >
-                            <div className="flex items-start justify-between">
-                                <div className="flex-1">
-                                    <div className="flex items-center gap-3">
-                                        <h3 className={`text-lg font-semibold ${event.status === 'completed' ? 'line-through text-gray-500 dark:text-gray-500' : 'text-gray-900 dark:text-white'}`}>
-                                            {event.title}
-                                        </h3>
-                                        {event.tags?.includes('study-session') && (
-                                            <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-purple-500/20 text-purple-400 border border-purple-500/30">
-                                                Study Session
+                    filteredEvents.map(event => {
+                        const completed = isEventCompleted(event);
+                        const displayTitle = event.title?.startsWith('[DONE] ') ? event.title.replace('[DONE] ', '') : event.title;
+                        return (
+                            <div
+                                key={event.id}
+                                className={`group p-5 rounded-xl border transition-all duration-300 hover:scale-[1.01] ${completed
+                                    ? 'bg-gray-50 dark:bg-gray-800/20 border-gray-200 dark:border-gray-700/30 opacity-60'
+                                    : 'bg-white dark:bg-gray-800/50 border-gray-200 dark:border-gray-700/50 hover:border-purple-500/50 hover:shadow-lg hover:shadow-purple-500/5'
+                                    }`}
+                            >
+                                <div className="flex items-start justify-between">
+                                    <div className="flex-1">
+                                        <div className="flex items-center gap-3">
+                                            <h3 className={`text-lg font-semibold ${completed ? 'line-through text-gray-500 dark:text-gray-500' : 'text-gray-900 dark:text-white'}`}>
+                                                {displayTitle}
+                                            </h3>
+                                            {completed && (
+                                                <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                                                    ✓ Done
+                                                </span>
+                                            )}
+                                            {event.tags?.includes('study-session') && (
+                                                <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-purple-500/20 text-purple-400 border border-purple-500/30">
+                                                    Study Session
+                                                </span>
+                                            )}
+                                        </div>
+                                        {event.description && (
+                                            <p className="text-gray-700 dark:text-gray-600 dark:text-gray-400 text-sm mt-2">{event.description}</p>
+                                        )}
+                                        <div className="flex items-center gap-4 mt-3 text-sm text-gray-500 dark:text-gray-500">
+                                            <span className="flex items-center gap-1.5">
+                                                <Clock className="w-4 h-4" />
+                                                {formatDateTime(event.start_time)}
                                             </span>
-                                        )}
+                                            {event.location && (
+                                                <span className="text-gray-700 dark:text-gray-600">• {event.location}</span>
+                                            )}
+                                        </div>
                                     </div>
-                                    {event.description && (
-                                        <p className="text-gray-700 dark:text-gray-600 dark:text-gray-400 text-sm mt-2">{event.description}</p>
-                                    )}
-                                    <div className="flex items-center gap-4 mt-3 text-sm text-gray-500 dark:text-gray-500">
-                                        <span className="flex items-center gap-1.5">
-                                            <Clock className="w-4 h-4" />
-                                            {formatDateTime(event.start_time)}
-                                        </span>
-                                        {event.location && (
-                                            <span className="text-gray-700 dark:text-gray-600">• {event.location}</span>
+                                    <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        {!completed && (
+                                            <button
+                                                onClick={() => handleComplete(event.id)}
+                                                className="p-2 text-emerald-400 hover:bg-emerald-500/20 rounded-lg transition"
+                                                title="Mark Complete"
+                                            >
+                                                <Check className="w-5 h-5" />
+                                            </button>
                                         )}
-                                    </div>
-                                </div>
-                                <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    {event.status !== 'completed' && (
                                         <button
-                                            onClick={() => handleComplete(event.id)}
-                                            className="p-2 text-emerald-400 hover:bg-emerald-500/20 rounded-lg transition"
-                                            title="Mark Complete"
+                                            onClick={() => handleDelete(event.id)}
+                                            className="p-2 text-red-400 hover:bg-red-500/20 rounded-lg transition"
+                                            title="Delete"
                                         >
-                                            <Check className="w-5 h-5" />
+                                            <Trash2 className="w-5 h-5" />
                                         </button>
-                                    )}
-                                    <button
-                                        onClick={() => handleDelete(event.id)}
-                                        className="p-2 text-red-400 hover:bg-red-500/20 rounded-lg transition"
-                                        title="Delete"
-                                    >
-                                        <Trash2 className="w-5 h-5" />
-                                    </button>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    ))
+                        );
+                    })
                 )}
+
             </div>
 
             {/* Create Event Modal */}

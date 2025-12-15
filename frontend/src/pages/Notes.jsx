@@ -13,7 +13,8 @@ import {
     ChevronDown,
     Sparkles,
     Check,
-    X
+    X,
+    Search
 } from 'lucide-react';
 
 const noteTypes = [
@@ -108,18 +109,37 @@ export default function Notes() {
 
     return (
         <div className="space-y-6 animate-fade-in">
-            {/* Header */}
-            <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl gradient-bg flex items-center justify-center">
-                    <Sparkles className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                    <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-                        AI Notes Generator
-                    </h1>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                        Generate study materials from your uploaded content
-                    </p>
+            {/* Header with Glassmorphism - matching Calendar style */}
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-600/20 via-pink-500/10 to-blue-600/20 border border-white/10 backdrop-blur-xl p-6">
+                <div className="absolute inset-0 bg-grid-white/5"></div>
+                <div className="relative flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <div className="p-3 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 shadow-lg shadow-purple-500/25">
+                            <Sparkles className="w-8 h-8 text-white" />
+                        </div>
+                        <div>
+                            <h1 className="text-3xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+                                AI Notes Generator
+                            </h1>
+                            <p className="text-gray-400 mt-1">
+                                Generate study materials from your uploaded content
+                            </p>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={handleGenerate}
+                            disabled={loading}
+                            className="group px-4 py-2.5 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-purple-500/25 transition-all duration-300 flex items-center gap-2 disabled:opacity-50"
+                        >
+                            {loading ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                                <Sparkles className="w-4 h-4" />
+                            )}
+                            {loading ? 'Generating...' : 'Generate Notes'}
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -128,8 +148,8 @@ export default function Notes() {
                 <button
                     onClick={() => setActiveTab('generate')}
                     className={`px-4 py-2 font-medium transition-colors border-b-2 -mb-px ${activeTab === 'generate'
-                            ? 'text-primary-600 border-primary-600'
-                            : 'text-gray-500 border-transparent hover:text-gray-700'
+                        ? 'text-primary-600 border-primary-600'
+                        : 'text-gray-500 border-transparent hover:text-gray-700'
                         }`}
                 >
                     Generate New
@@ -137,8 +157,8 @@ export default function Notes() {
                 <button
                     onClick={() => setActiveTab('saved')}
                     className={`px-4 py-2 font-medium transition-colors border-b-2 -mb-px ${activeTab === 'saved'
-                            ? 'text-primary-600 border-primary-600'
-                            : 'text-gray-500 border-transparent hover:text-gray-700'
+                        ? 'text-primary-600 border-primary-600'
+                        : 'text-gray-500 border-transparent hover:text-gray-700'
                         }`}
                 >
                     Saved Notes ({savedNotes.length})
@@ -159,18 +179,18 @@ export default function Notes() {
                                         key={type.id}
                                         onClick={() => setSelectedType(type.id)}
                                         className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all ${selectedType === type.id
-                                                ? 'bg-primary-50 dark:bg-primary-900/50 border-2 border-primary-500'
-                                                : 'bg-gray-50 dark:bg-gray-800 border-2 border-transparent hover:border-gray-200 dark:hover:border-gray-700'
+                                            ? 'bg-primary-50 dark:bg-primary-900/50 border-2 border-primary-500'
+                                            : 'bg-gray-50 dark:bg-gray-800 border-2 border-transparent hover:border-gray-200 dark:hover:border-gray-700'
                                             }`}
                                     >
                                         <type.icon className={`w-5 h-5 ${selectedType === type.id
-                                                ? 'text-primary-600 dark:text-primary-400'
-                                                : 'text-gray-500'
+                                            ? 'text-primary-600 dark:text-primary-400'
+                                            : 'text-gray-500'
                                             }`} />
                                         <div className="text-left">
                                             <p className={`font-medium ${selectedType === type.id
-                                                    ? 'text-primary-700 dark:text-primary-300'
-                                                    : 'text-gray-700 dark:text-gray-300'
+                                                ? 'text-primary-700 dark:text-primary-300'
+                                                : 'text-gray-700 dark:text-gray-300'
                                                 }`}>
                                                 {type.label}
                                             </p>
@@ -282,8 +302,8 @@ export default function Notes() {
                                                             <div
                                                                 key={optIndex}
                                                                 className={`p-2 rounded-lg ${showMcqAnswers[index] && option === mcq.correct_answer
-                                                                        ? 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300'
-                                                                        : 'bg-white dark:bg-gray-700'
+                                                                    ? 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300'
+                                                                    : 'bg-white dark:bg-gray-700'
                                                                     }`}
                                                             >
                                                                 {option}
@@ -311,16 +331,60 @@ export default function Notes() {
                                     )}
                                 </div>
                             ) : (
-                                <div className="h-96 flex flex-col items-center justify-center text-center">
-                                    <div className="w-20 h-20 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-6">
-                                        <FileText className="w-10 h-10 text-gray-400" />
+                                <div className="h-96 flex flex-col items-center justify-center text-center px-6">
+                                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center mb-6">
+                                        <Search className="w-8 h-8 text-purple-400" />
                                     </div>
                                     <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                                        No notes generated yet
+                                        Generate {noteTypes.find(t => t.id === selectedType)?.label}
                                     </h3>
-                                    <p className="text-gray-500 dark:text-gray-400 max-w-md">
-                                        Select a note type and click "Generate" to create AI-powered study materials from your uploaded documents.
+                                    <p className="text-gray-500 dark:text-gray-400 mb-6 max-w-md">
+                                        Enter a topic (optional) and click Generate to create AI-powered study materials from your uploaded documents.
                                     </p>
+
+                                    {/* Topic Search Input */}
+                                    <div className="w-full max-w-md space-y-4">
+                                        <div className="relative">
+                                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                            <input
+                                                type="text"
+                                                value={topic}
+                                                onChange={(e) => setTopic(e.target.value)}
+                                                placeholder="Enter a topic (e.g., Operating Systems, Data Structures)"
+                                                className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                                            />
+                                        </div>
+
+                                        {selectedType === 'mcqs' && (
+                                            <select
+                                                value={numMcqs}
+                                                onChange={(e) => setNumMcqs(Number(e.target.value))}
+                                                className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                                            >
+                                                {[5, 10, 15, 20].map(n => (
+                                                    <option key={n} value={n}>{n} questions</option>
+                                                ))}
+                                            </select>
+                                        )}
+
+                                        <button
+                                            onClick={handleGenerate}
+                                            disabled={loading}
+                                            className="w-full py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-purple-500/25 transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50"
+                                        >
+                                            {loading ? (
+                                                <>
+                                                    <Loader2 className="w-5 h-5 animate-spin" />
+                                                    Generating...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Sparkles className="w-5 h-5" />
+                                                    Generate {noteTypes.find(t => t.id === selectedType)?.label}
+                                                </>
+                                            )}
+                                        </button>
+                                    </div>
                                 </div>
                             )}
                         </div>
@@ -397,3 +461,4 @@ export default function Notes() {
         </div>
     );
 }
+
