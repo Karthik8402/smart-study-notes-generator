@@ -1,44 +1,41 @@
 # FastAPI
-fastapi==0.104.1
-uvicorn[standard]==0.24.0
-python-multipart==0.0.6
-python-jose[cryptography]==3.3.0
-passlib[bcrypt]==1.7.4
-pydantic-settings==2.1.0
+fastapi>=0.104.1
+uvicorn[standard]>=0.24.0
+python-multipart>=0.0.6
+python-jose[cryptography]>=3.3.0
+passlib[bcrypt]>=1.7.4
+pydantic-settings>=2.1.0
 
 # MongoDB
-motor==3.3.2
-pymongo==4.6.1
+motor>=3.3.2
+pymongo>=4.6.1
 
 # Vector Database & Embeddings
-chromadb==0.4.18
-sentence-transformers==2.2.2
+chromadb>=0.4.18
+sentence-transformers>=2.2.2
 
 # LLM - Groq (FREE)
-groq==0.4.2
+groq>=0.4.2
 
 # File Processing
-pypdf==3.17.1
-python-pptx==0.6.23
-pytesseract==0.3.10
-Pillow==10.1.0
-youtube-transcript-api==0.6.1
-aiofiles==23.2.1
+pypdf>=3.17.1
+python-pptx>=0.6.23
+pytesseract>=0.3.10
+Pillow>=10.1.0
+youtube-transcript-api>=0.6.1
+aiofiles>=23.2.1
 
 # Text Processing
-langchain-text-splitters==0.3.2
-tiktoken==0.5.2
+langchain-text-splitters>=0.3.2
+tiktoken>=0.5.2
 
 # Authentication & Security
-bcrypt==4.1.2
-email-validator==2.1.0
-
-# TensorFlow compatibility for sentence-transformers
-tf-keras==2.17.0
+bcrypt>=4.1.2
+email-validator>=2.1.0
 
 # Utilities
-python-dotenv==1.0.0
-httpx==0.25.2
+python-dotenv>=1.0.0
+httpx>=0.25.2
 
 # MCP (Model Context Protocol)
 mcp>=1.0.0
@@ -47,3 +44,6 @@ mcp>=1.0.0
 google-api-python-client>=2.100.0
 google-auth-httplib2>=0.2.0
 google-auth-oauthlib>=1.1.0
+
+# Gemini AI
+google-generativeai>=0.3.0
