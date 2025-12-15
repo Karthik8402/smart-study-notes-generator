@@ -6,6 +6,9 @@ Supports per-user token storage and automatic token refresh.
 """
 
 import os
+import json
+import base64
+import tempfile
 from pathlib import Path
 from typing import Optional, List
 from google.oauth2.credentials import Credentials
@@ -39,20 +42,46 @@ class GoogleAuthError(Exception):
 
 
 def get_credentials_path() -> Path:
-    """Get the path to credentials.json file."""
+    """Get the path to credentials.json file.
+    
+    Supports:
+    1. Local credentials.json file
+    2. GOOGLE_CREDENTIALS_PATH environment variable
+    3. GOOGLE_CREDENTIALS_JSON environment variable (base64 encoded - for cloud deployment)
+    """
+    # Check local file first
     if CREDENTIALS_FILE.exists():
         return CREDENTIALS_FILE
     
-    # Also check environment variable
+    # Check custom path from environment
     env_path = os.getenv('GOOGLE_CREDENTIALS_PATH')
     if env_path and Path(env_path).exists():
         return Path(env_path)
     
+    # Check for base64-encoded credentials in environment (for Render/cloud deployment)
+    env_json = os.getenv('GOOGLE_CREDENTIALS_JSON')
+    if env_json:
+        try:
+            # Decode base64 and save to temp file
+            credentials_data = base64.b64decode(env_json).decode('utf-8')
+            # Validate it's valid JSON
+            json.loads(credentials_data)
+            
+            # Create temp credentials file
+            temp_creds = Path(tempfile.gettempdir()) / 'google_credentials.json'
+            temp_creds.write_text(credentials_data)
+            print(f"[GoogleAuth] Using credentials from GOOGLE_CREDENTIALS_JSON environment variable")
+            return temp_creds
+        except Exception as e:
+            print(f"[GoogleAuth] Error decoding GOOGLE_CREDENTIALS_JSON: {e}")
+    
     raise GoogleAuthError(
         f"credentials.json not found at {CREDENTIALS_FILE}. "
         "Please download OAuth credentials from Google Cloud Console "
-        "and save them to this location."
+        "and save them to this location, OR set GOOGLE_CREDENTIALS_JSON "
+        "environment variable with base64-encoded credentials."
     )
+
 
 
 def get_token_path(user_id: str, service: str = "all") -> Path:
