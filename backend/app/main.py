@@ -8,9 +8,6 @@ from contextlib import asynccontextmanager
 import os
 
 from app.config import settings
-from app.database.mongodb import connect_to_mongo, close_mongo_connection
-from app.database.vector_db import initialize_vector_db
-from app.routers import auth, upload, chat, notes, mcp
 
 
 @asynccontextmanager
@@ -22,15 +19,30 @@ async def lifespan(app: FastAPI):
     os.makedirs(settings.upload_directory, exist_ok=True)
     os.makedirs(settings.chroma_persist_directory, exist_ok=True)
     
-    await connect_to_mongo()
-    initialize_vector_db()
+    # Try to connect to MongoDB (optional - don't crash if unavailable)
+    try:
+        from app.database.mongodb import connect_to_mongo, close_mongo_connection
+        await connect_to_mongo()
+    except Exception as e:
+        print(f"⚠️ MongoDB connection failed (optional): {e}")
+    
+    # Try to initialize VectorDB (optional - don't crash if unavailable)
+    try:
+        from app.database.vector_db import initialize_vector_db
+        initialize_vector_db()
+    except Exception as e:
+        print(f"⚠️ VectorDB initialization failed (optional): {e}")
     
     print("🎉 Application started successfully!")
     
     yield
     
     # Shutdown
-    await close_mongo_connection()
+    try:
+        from app.database.mongodb import close_mongo_connection
+        await close_mongo_connection()
+    except:
+        pass
 
 
 app = FastAPI(
@@ -40,16 +52,18 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# Configure CORS
+# Configure CORS - Allow all origins for cloud deployment
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000", "http://127.0.0.1:5173"],
+    allow_origins=["*"],  # Allow all origins for Render deployment
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+
 # Include routers
+from app.routers import auth, upload, chat, notes, mcp
 app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
 app.include_router(upload.router, prefix="/api/upload", tags=["File Upload"])
 app.include_router(chat.router, prefix="/api/chat", tags=["Chat & RAG"])
