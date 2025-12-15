@@ -159,126 +159,124 @@ export const notesAPI = {
   },
 };
 
-// MCP Tools API - Calendar, Files, Drive
+// MCP Tools API - Calendar, Filesystem, Drive
 export const mcpAPI = {
   // ===== Calendar Tool =====
-  createReminder: async (reminder) => {
-    const response = await api.post('/mcp/calendar/reminders', reminder);
+  createEvent: async (event) => {
+    const response = await api.post('/mcp/calendar/events', event);
     return response.data;
   },
   
-  getReminders: async () => {
-    const response = await api.get('/mcp/calendar/reminders');
+  getEvents: async (startDate = null, endDate = null) => {
+    let params = '';
+    if (startDate) params += `?start_date=${startDate}`;
+    if (endDate) params += `${params ? '&' : '?'}end_date=${endDate}`;
+    const response = await api.get(`/mcp/calendar/events${params}`);
     return response.data;
   },
   
-  getUpcomingReminders: async (days = 7) => {
-    const response = await api.get(`/mcp/calendar/reminders/upcoming?days=${days}`);
+  getTodayEvents: async () => {
+    const response = await api.get('/mcp/calendar/events/today');
     return response.data;
   },
   
-  getOverdueReminders: async () => {
-    const response = await api.get('/mcp/calendar/reminders/overdue');
+  getUpcomingEvents: async (days = 7) => {
+    const response = await api.get(`/mcp/calendar/events/upcoming?days=${days}`);
     return response.data;
   },
   
-  completeReminder: async (reminderId) => {
-    const response = await api.put(`/mcp/calendar/reminders/${reminderId}/complete`);
+  getEvent: async (eventId) => {
+    const response = await api.get(`/mcp/calendar/events/${eventId}`);
     return response.data;
   },
   
-  deleteReminder: async (reminderId) => {
-    const response = await api.delete(`/mcp/calendar/reminders/${reminderId}`);
+  updateEvent: async (eventId, updates) => {
+    const response = await api.put(`/mcp/calendar/events/${eventId}`, updates);
     return response.data;
   },
   
-  createSchedule: async (subjects, startDate, days = 7, hoursPerDay = 4, timeOfDay = '18:00') => {
+  deleteEvent: async (eventId) => {
+    const response = await api.delete(`/mcp/calendar/events/${eventId}`);
+    return response.data;
+  },
+  
+  createSchedule: async (subjects, startDate, days = 7, hoursPerSession = 2, startHour = 18) => {
     const response = await api.post('/mcp/calendar/schedule', {
       subjects,
       start_date: startDate,
       days,
-      hours_per_day: hoursPerDay,
-      time_of_day: timeOfDay
+      hours_per_session: hoursPerSession,
+      start_hour: startHour
     });
     return response.data;
   },
   
-  getCalendarStats: async () => {
-    const response = await api.get('/mcp/calendar/stats');
+  // ===== Filesystem Tool =====
+  listDirectory: async (path = '.') => {
+    const response = await api.get(`/mcp/filesystem/list?path=${encodeURIComponent(path)}`);
     return response.data;
   },
   
-  // ===== File Tool =====
-  saveNote: async (title, content, noteType = 'other') => {
-    const response = await api.post('/mcp/files/save', {
-      title,
-      content,
-      note_type: noteType
-    });
+  readFile: async (path) => {
+    const response = await api.get(`/mcp/filesystem/read?path=${encodeURIComponent(path)}`);
     return response.data;
   },
   
-  getSavedFiles: async (category = null) => {
-    const params = category ? `?category=${category}` : '';
-    const response = await api.get(`/mcp/files/list${params}`);
+  writeFile: async (path, content) => {
+    const response = await api.post('/mcp/filesystem/write', { path, content });
     return response.data;
   },
   
-  getSavedFileContent: async (category, filename) => {
-    const response = await api.get(`/mcp/files/get/${category}/${filename}`);
+  deleteFile: async (path) => {
+    const response = await api.delete(`/mcp/filesystem/delete?path=${encodeURIComponent(path)}`);
     return response.data;
   },
   
-  deleteSavedFile: async (category, filename) => {
-    const response = await api.delete(`/mcp/files/${category}/${filename}`);
+  createDirectory: async (path) => {
+    const response = await api.post(`/mcp/filesystem/mkdir?path=${encodeURIComponent(path)}`);
     return response.data;
   },
   
-  searchFiles: async (query) => {
-    const response = await api.get(`/mcp/files/search?q=${encodeURIComponent(query)}`);
+  searchFiles: async (query, path = '.') => {
+    const response = await api.get(`/mcp/filesystem/search?query=${encodeURIComponent(query)}&path=${encodeURIComponent(path)}`);
     return response.data;
   },
   
-  getFileStats: async () => {
-    const response = await api.get('/mcp/files/stats');
+  getFileInfo: async (path) => {
+    const response = await api.get(`/mcp/filesystem/info?path=${encodeURIComponent(path)}`);
     return response.data;
   },
   
   // ===== Drive Tool =====
-  uploadToDrive: async (file, folder = 'Documents', description = null) => {
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('folder', folder);
-    if (description) formData.append('description', description);
-    
-    const response = await api.post('/mcp/drive/upload', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
+  uploadToDrive: async (filename, content, folder = 'Documents', description = '') => {
+    const response = await api.post('/mcp/drive/upload', {
+      filename,
+      content,
+      folder,
+      is_base64: false,
+      description
     });
     return response.data;
   },
   
-  uploadTextToDrive: async (filename, content, folder = 'Notes') => {
-    const response = await api.post('/mcp/drive/upload-text', null, {
-      params: { filename, content, folder }
-    });
+  downloadFromDrive: async (fileId) => {
+    const response = await api.get(`/mcp/drive/download/${fileId}`);
     return response.data;
   },
   
-  getDriveFiles: async () => {
-    const response = await api.get('/mcp/drive/files');
+  getDriveFiles: async (folder = null) => {
+    const params = folder ? `?folder=${encodeURIComponent(folder)}` : '';
+    const response = await api.get(`/mcp/drive/files${params}`);
     return response.data;
   },
   
-  getFolderContents: async (folderPath = '') => {
-    const response = await api.get(`/mcp/drive/folder/${folderPath}`);
+  getDriveFolders: async () => {
+    const response = await api.get('/mcp/drive/folders');
     return response.data;
   },
   
-  createFolder: async (folderName, parentFolder = null) => {
-    const response = await api.post('/mcp/drive/folders', {
-      folder_name: folderName,
-      parent_folder: parentFolder
-    });
+  createFolder: async (name, parent = null) => {
+    const response = await api.post('/mcp/drive/folders', { name, parent });
     return response.data;
   },
   
@@ -288,17 +286,39 @@ export const mcpAPI = {
   },
   
   moveDriveFile: async (fileId, newFolder) => {
-    const response = await api.put(`/mcp/drive/files/${fileId}/move?new_folder=${newFolder}`);
+    const response = await api.put(`/mcp/drive/files/${fileId}/move?new_folder=${encodeURIComponent(newFolder)}`);
     return response.data;
   },
   
   searchDrive: async (query) => {
-    const response = await api.get(`/mcp/drive/search?q=${encodeURIComponent(query)}`);
+    const response = await api.get(`/mcp/drive/search?query=${encodeURIComponent(query)}`);
     return response.data;
   },
   
   getDriveStats: async () => {
     const response = await api.get('/mcp/drive/stats');
+    return response.data;
+  },
+  
+  shareDriveFile: async (fileId, shareWith) => {
+    const response = await api.post(`/mcp/drive/files/${fileId}/share?share_with=${encodeURIComponent(shareWith)}`);
+    return response.data;
+  },
+  
+  // ===== Saved Notes =====
+  getSavedNotes: async (category = null) => {
+    const params = category ? `?category=${category}` : '';
+    const response = await api.get(`/mcp/notes/list${params}`);
+    return response.data;
+  },
+  
+  getSavedNoteContent: async (category, filename) => {
+    const response = await api.get(`/mcp/notes/read/${category}/${encodeURIComponent(filename)}`);
+    return response.data;
+  },
+  
+  deleteSavedNote: async (category, filename) => {
+    const response = await api.delete(`/mcp/notes/${category}/${encodeURIComponent(filename)}`);
     return response.data;
   },
   
@@ -309,5 +329,140 @@ export const mcpAPI = {
   },
 };
 
-export default api;
+// Google MCP API - Real Google Calendar & Drive Integration
+export const googleAPI = {
+  // ===== Google Calendar =====
+  calendarAuth: async () => {
+    const response = await api.get('/mcp/google/calendar/auth');
+    return response.data;
+  },
+  
+  calendarStatus: async () => {
+    const response = await api.get('/mcp/google/calendar/status');
+    return response.data;
+  },
+  
+  createGoogleEvent: async (event) => {
+    const response = await api.post('/mcp/google/calendar/events', event);
+    return response.data;
+  },
+  
+  getGoogleEvents: async (startDate = null, endDate = null) => {
+    let params = '';
+    if (startDate) params += `?start_date=${startDate}`;
+    if (endDate) params += `${params ? '&' : '?'}end_date=${endDate}`;
+    const response = await api.get(`/mcp/google/calendar/events${params}`);
+    return response.data;
+  },
+  
+  getGoogleTodayEvents: async () => {
+    const response = await api.get('/mcp/google/calendar/events/today');
+    return response.data;
+  },
+  
+  getGoogleUpcomingEvents: async (days = 7) => {
+    const response = await api.get(`/mcp/google/calendar/events/upcoming?days=${days}`);
+    return response.data;
+  },
+  
+  getGoogleEvent: async (eventId) => {
+    const response = await api.get(`/mcp/google/calendar/events/${eventId}`);
+    return response.data;
+  },
+  
+  updateGoogleEvent: async (eventId, updates) => {
+    const response = await api.put(`/mcp/google/calendar/events/${eventId}`, updates);
+    return response.data;
+  },
+  
+  deleteGoogleEvent: async (eventId) => {
+    const response = await api.delete(`/mcp/google/calendar/events/${eventId}`);
+    return response.data;
+  },
+  
+  createGoogleSchedule: async (subjects, startDate, days = 7, hoursPerSession = 2, startHour = 18) => {
+    const response = await api.post('/mcp/google/calendar/schedule', {
+      subjects,
+      start_date: startDate,
+      days,
+      hours_per_session: hoursPerSession,
+      start_hour: startHour
+    });
+    return response.data;
+  },
+  
+  quickAddEvent: async (text) => {
+    const response = await api.post(`/mcp/google/calendar/quick-add?text=${encodeURIComponent(text)}`);
+    return response.data;
+  },
+  
+  // ===== Google Drive =====
+  driveAuth: async () => {
+    const response = await api.get('/mcp/google/drive/auth');
+    return response.data;
+  },
+  
+  driveStatus: async () => {
+    const response = await api.get('/mcp/google/drive/status');
+    return response.data;
+  },
+  
+  uploadToGoogleDrive: async (filename, content, folder = null, description = '') => {
+    const response = await api.post('/mcp/google/drive/upload', {
+      filename,
+      content,
+      folder,
+      is_base64: false,
+      description
+    });
+    return response.data;
+  },
+  
+  downloadFromGoogleDrive: async (fileId) => {
+    const response = await api.get(`/mcp/google/drive/download/${fileId}`);
+    return response.data;
+  },
+  
+  getGoogleDriveFiles: async (folder = null) => {
+    const params = folder ? `?folder=${encodeURIComponent(folder)}` : '';
+    const response = await api.get(`/mcp/google/drive/files${params}`);
+    return response.data;
+  },
+  
+  getGoogleDriveFolders: async () => {
+    const response = await api.get('/mcp/google/drive/folders');
+    return response.data;
+  },
+  
+  createGoogleFolder: async (name, parent = null) => {
+    const response = await api.post('/mcp/google/drive/folders', { name, parent });
+    return response.data;
+  },
+  
+  deleteGoogleDriveFile: async (fileId) => {
+    const response = await api.delete(`/mcp/google/drive/files/${fileId}`);
+    return response.data;
+  },
+  
+  moveGoogleDriveFile: async (fileId, newFolder) => {
+    const response = await api.put(`/mcp/google/drive/files/${fileId}/move?new_folder=${encodeURIComponent(newFolder)}`);
+    return response.data;
+  },
+  
+  searchGoogleDrive: async (query) => {
+    const response = await api.get(`/mcp/google/drive/search?query=${encodeURIComponent(query)}`);
+    return response.data;
+  },
+  
+  getGoogleDriveStats: async () => {
+    const response = await api.get('/mcp/google/drive/stats');
+    return response.data;
+  },
+  
+  shareGoogleDriveFile: async (fileId, email, role = 'reader') => {
+    const response = await api.post(`/mcp/google/drive/files/${fileId}/share?email=${encodeURIComponent(email)}&role=${role}`);
+    return response.data;
+  },
+};
 
+export default api;

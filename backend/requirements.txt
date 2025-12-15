@@ -42,3 +42,8 @@ httpx==0.25.2
 
 # MCP (Model Context Protocol)
 mcp>=1.0.0
+
+# Google APIs (Calendar & Drive)
+google-api-python-client>=2.100.0
+google-auth-httplib2>=0.2.0
+google-auth-oauthlib>=1.1.0

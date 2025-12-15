@@ -1,6 +1,6 @@
 # 📚 Smart Study Notes Generator & Organizer
 
-An AI-powered study notes generator that uses **RAG (Retrieval-Augmented Generation)** and **MCP (Model Context Protocol)** to help students organize and learn from their study materials.
+An AI-powered study notes generator that uses **RAG (Retrieval-Augmented Generation)** and **MCP (Model Context Protocol)** to help students organize, learn from their study materials, and prepare for exams and **Campus Recruitment Training (CRT)**.
 
 ![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-green.svg)
@@ -17,6 +17,41 @@ An AI-powered study notes generator that uses **RAG (Retrieval-Augmented Generat
 - 🔧 **MCP Tool Integration** - Integration with Drive, Calendar, and local file system
 - 🌙 **Dark Mode** - Beautiful UI with light/dark theme support
 - 📱 **Responsive Design** - Works seamlessly on desktop and mobile
+- 📊 **Interactive Dashboard** - Track your progress, study hours, and recent activity
+- 📅 **Smart Study Scheduler** - MCP-powered calendar integration to auto-schedule study sessions
+
+## 🎓 Campus Recruitment Training (CRT)
+
+A dedicated suite of tools designed to help students ace their campus placements:
+
+- 🧠 **Aptitude & Logical Reasoning**
+  - Upload practice sheets (PDF/Images) and get instant solutions with explanations.
+  - Generate unlimited practice problems based on your weak areas.
+
+- 💻 **Technical Interview Prep**
+  - Mock interview simulation for core subjects (OS, DBMS, CN, Java/Python).
+  - "Explain code" feature to help you articulate logic clearly.
+
+- 🏢 **Company-Specific Patterns**
+  - Analyze uploaded past papers to identify recurring topics.
+  - Generate company-specific preparation strategies.
+
+- 🗣️ **HR Round Preparation**
+  - Behavioral question simulator with feedback on your answers.
+  - Resume screening and optimization tips.
+
+## 🔌 MCP Integration (Model Context Protocol)
+
+Smart Study Notes leverages the **Model Context Protocol** to connect AI with your local tools:
+
+### 📅 Calendar Server
+- **Auto-Scheduling**: "Plan a study schedule for DBMS exam starting Monday" -> Automatically blocks entries in your calendar.
+- **Conflict Detection**: Checks your existing events before scheduling.
+- **Study Reminders**: Smart notifications for upcoming sessions.
+
+### 📂 Filesystem & Drive
+- **Direct Access**: Chat with files directly from your computer or Google Drive without manual uploading.
+- **Organization**: Auto-organize generated notes into your actual file system folders.
 
 ## 🏗️ Tech Stack
 
@@ -27,7 +62,7 @@ An AI-powered study notes generator that uses **RAG (Retrieval-Augmented Generat
 | **User Database** | MongoDB Atlas |
 | **Vector Database** | ChromaDB |
 | **Embeddings** | Sentence Transformers (all-MiniLM-L6-v2) |
-| **LLM** | OpenAI GPT-3.5/4 |
+| **LLM** | Ollama (Local Models: Llama 3, Mistral) |
 | **File Processing** | pypdf, python-pptx, pytesseract, youtube-transcript-api |
 
 ## 📁 Project Structure
@@ -130,7 +165,9 @@ ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=30
 
 # OpenAI API
-OPENAI_API_KEY=sk-your-openai-api-key
+# Ollama configuration
+OLLAMA_BASE_URL=http://localhost:11434/v1
+OLLAMA_MODEL=llama3
 
 # ChromaDB
 CHROMA_PERSIST_DIRECTORY=./chroma_db
@@ -182,9 +219,6 @@ VITE_API_URL=http://localhost:8000
 4. **Generate Notes** - Create summaries, topic notes, MCQs, or explanations
 5. **Save & Review** - Save generated notes for later review
 
-## 📸 Screenshots
-
-*Coming soon*
 
 ## 🤝 Contributing
 

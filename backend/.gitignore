@@ -32,3 +32,8 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Google OAuth Credentials (NEVER commit these!)
+credentials.json
+*_token.json
+app/mcp/servers/credentials.json
