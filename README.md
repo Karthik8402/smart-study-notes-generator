@@ -130,7 +130,7 @@ copy .env.example .env  # Windows
 cp .env.example .env    # macOS/Linux
 
 # Start the server
-uvicorn app.main:app --reload
+python -m uvicorn app.main:app --reload --port 8000
 ```
 
 ### Frontend Setup
@@ -219,6 +219,54 @@ VITE_API_URL=http://localhost:8000
 4. **Generate Notes** - Create summaries, topic notes, MCQs, or explanations
 5. **Save & Review** - Save generated notes for later review
 
+
+## ☁️ AWS EC2 Deployment
+
+Deploy to AWS EC2 Free Tier (t2.micro with swap file for memory extension).
+
+### Prerequisites
+- AWS account with EC2 access
+- GitHub repository pushed with your code
+- MongoDB Atlas connection string
+- Groq API key (free at https://console.groq.com)
+
+### Quick Deploy
+
+1. **Launch EC2 Instance**
+   - AMI: Ubuntu Server 22.04 LTS
+   - Instance: t2.micro (Free tier)
+   - Security Group: Allow SSH (22), HTTP (80), HTTPS (443)
+
+2. **Connect to EC2**
+   ```bash
+   ssh -i your-key.pem ubuntu@<EC2-PUBLIC-IP>
+   ```
+
+3. **Run Deployment Script**
+   ```bash
+   curl -O https://raw.githubusercontent.com/Karthik8402/smart-study-notes-generator/main/deploy_ec2.sh
+   chmod +x deploy_ec2.sh
+   ./deploy_ec2.sh
+   ```
+
+4. **Configure Environment**
+   ```bash
+   nano /home/ubuntu/smart-study-notes/backend/.env
+   # Add your MongoDB URL, GROQ_API_KEY, SECRET_KEY
+   pm2 restart all
+   ```
+
+5. **Access Your App**
+   - Open `http://<EC2-PUBLIC-IP>` in browser
+   - Health check: `curl http://<EC2-PUBLIC-IP>/api/health`
+
+### Server Management
+```bash
+pm2 status          # View running processes
+pm2 logs            # View logs
+pm2 restart all     # Restart all services
+pm2 stop all        # Stop all services
+```
 
 ## 🤝 Contributing
 
