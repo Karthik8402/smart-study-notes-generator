@@ -4,6 +4,8 @@ FastAPI Main Application Entry Point
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from contextlib import asynccontextmanager
 import os
 
@@ -79,3 +81,33 @@ async def root():
 @app.get("/api/health", tags=["Health"])
 async def health_check():
     return {"status": "healthy", "services": ["auth", "upload", "chat", "notes", "mcp"]}
+
+
+# ==========================================
+# Frontend Static File Serving (Production)
+# ==========================================
+
+# Mount the static directory only if it exists (it will be created in Docker)
+if os.path.exists("app/static"):
+    # Mount assets folder (files like index-Dx8s...css, etc.)
+    # Vite builds to dist/assets by default
+    if os.path.exists("app/static/assets"):
+        app.mount("/assets", StaticFiles(directory="app/static/assets"), name="assets")
+
+    # Catch-all route for SPA (Single Page Application)
+    # This must be the LAST route defined
+    @app.get("/{full_path:path}", include_in_schema=False)
+    async def serve_spa(full_path: str):
+        # 1. API routes are already handled above.
+        # 2. If path starts with 'api/', return 404 (don't serve HTML for broken API calls)
+        if full_path.startswith("api"):
+            from fastapi import HTTPException
+            raise HTTPException(status_code=404, detail="API endpoint not found")
+
+        # 3. Check if a specific file exists (e.g., favicon.ico, manifest.json)
+        file_path = os.path.join("app/static", full_path)
+        if os.path.isfile(file_path):
+            return FileResponse(file_path)
+
+        # 4. Otherwise, serve index.html (React Router handles the rest)
+        return FileResponse("app/static/index.html")

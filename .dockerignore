@@ -1,0 +1,43 @@
+# Git
+.git
+.gitignore
+.github
+
+# Environment
+.env
+.env.*
+!.env.example
+venv/
+env/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Node
+frontend/node_modules
+frontend/dist
+node_modules
+npm-debug.log
+yarn-error.log
+
+# Backend
+backend/venv
+backend/__pycache__
+backend/uploads/*
+!backend/uploads/.gitkeep
+backend/chroma_db/*
+!backend/chroma_db/.gitkeep
+
+# IDEs
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Documentation & artifacts
+.gemini/
