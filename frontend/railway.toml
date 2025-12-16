@@ -1,0 +1,10 @@
+[build]
+builder = "nixpacks"
+
+[deploy]
+startCommand = "npx serve dist -s -l $PORT"
+healthcheckPath = "/"
+restartPolicyType = "on_failure"
+
+[variables]
+NODE_VERSION = "18"

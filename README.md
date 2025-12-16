@@ -220,53 +220,30 @@ VITE_API_URL=http://localhost:8000
 5. **Save & Review** - Save generated notes for later review
 
 
-## ☁️ AWS EC2 Deployment
+## 🚂 Railway Deployment
 
-Deploy to AWS EC2 Free Tier (t2.micro with swap file for memory extension).
-
-### Prerequisites
-- AWS account with EC2 access
-- GitHub repository pushed with your code
-- MongoDB Atlas connection string
-- Groq API key (free at https://console.groq.com)
+Deploy to Railway for easy cloud hosting!
 
 ### Quick Deploy
 
-1. **Launch EC2 Instance**
-   - AMI: Ubuntu Server 22.04 LTS
-   - Instance: t2.micro (Free tier)
-   - Security Group: Allow SSH (22), HTTP (80), HTTPS (443)
-
-2. **Connect to EC2**
+1. **Push to GitHub**
    ```bash
-   ssh -i your-key.pem ubuntu@<EC2-PUBLIC-IP>
+   git add . && git commit -m "Deploy" && git push
    ```
 
-3. **Run Deployment Script**
-   ```bash
-   curl -O https://raw.githubusercontent.com/Karthik8402/smart-study-notes-generator/main/deploy_ec2.sh
-   chmod +x deploy_ec2.sh
-   ./deploy_ec2.sh
-   ```
+2. **Go to [Railway](https://railway.app)** → Sign in with GitHub
 
-4. **Configure Environment**
-   ```bash
-   nano /home/ubuntu/smart-study-notes/backend/.env
-   # Add your MongoDB URL, GROQ_API_KEY, SECRET_KEY
-   pm2 restart all
-   ```
+3. **Deploy Backend**:
+   - New Project → Deploy from GitHub
+   - Set Root Directory: `backend`
+   - Add Variables: `MONGODB_URL`, `GROQ_API_KEY`, `SECRET_KEY`
 
-5. **Access Your App**
-   - Open `http://<EC2-PUBLIC-IP>` in browser
-   - Health check: `curl http://<EC2-PUBLIC-IP>/api/health`
+4. **Deploy Frontend**:
+   - New Project → Deploy from GitHub  
+   - Set Root Directory: `frontend`
+   - Add Variable: `VITE_API_URL=https://your-backend.railway.app`
 
-### Server Management
-```bash
-pm2 status          # View running processes
-pm2 logs            # View logs
-pm2 restart all     # Restart all services
-pm2 stop all        # Stop all services
-```
+📖 See [RAILWAY_DEPLOY.md](RAILWAY_DEPLOY.md) for detailed instructions.
 
 ## 🤝 Contributing
 

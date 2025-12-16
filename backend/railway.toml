@@ -1,0 +1,17 @@
+[build]
+builder = "nixpacks"
+
+[deploy]
+startCommand = "gunicorn app.main:app --workers 1 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT --timeout 120"
+healthcheckPath = "/api/health"
+healthcheckTimeout = 300
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 3
+
+[variables]
+# These will be set in Railway dashboard
+# MONGODB_URL = ""
+# GROQ_API_KEY = ""
+# SECRET_KEY = ""
+PYTHON_VERSION = "3.11"
+DEBUG = "False"
