@@ -21,6 +21,9 @@ env/
 .env.local
 .env.*.local
 
+# Google credentials (use GOOGLE_CREDENTIALS_JSON env var instead)
+app/mcp/servers/credentials.json
+
 # Uploads and data (Railway has ephemeral storage)
 uploads/*
 !uploads/.gitkeep

@@ -92,10 +92,44 @@ railway up
 | `SECRET_KEY` | Random string for JWT tokens |
 | `DATABASE_NAME` | `smart_study_notes` |
 
+### Backend (Optional - Google Integration)
+| Variable | Description |
+|----------|-------------|
+| `GOOGLE_CREDENTIALS_JSON` | Base64-encoded Google OAuth credentials |
+
 ### Frontend (Required)
 | Variable | Description |
 |----------|-------------|
 | `VITE_API_URL` | Your backend Railway URL |
+
+---
+
+## 🔐 Google Credentials Setup (For Calendar & Drive)
+
+To enable Google Calendar and Drive integration on Railway:
+
+### Step 1: Get your credentials.json
+- Go to [Google Cloud Console](https://console.cloud.google.com)
+- Create a project → Enable Calendar & Drive APIs
+- Create OAuth 2.0 credentials → Download `credentials.json`
+
+### Step 2: Convert to Base64
+Run this command on your local machine:
+
+**Windows (PowerShell):**
+```powershell
+[Convert]::ToBase64String([IO.File]::ReadAllBytes("backend\app\mcp\servers\credentials.json"))
+```
+
+**macOS/Linux:**
+```bash
+base64 -w 0 backend/app/mcp/servers/credentials.json
+```
+
+### Step 3: Add to Railway
+- Copy the base64 output
+- In Railway → Backend service → Variables
+- Add: `GOOGLE_CREDENTIALS_JSON` = (paste the base64 string)
 
 ---
 
