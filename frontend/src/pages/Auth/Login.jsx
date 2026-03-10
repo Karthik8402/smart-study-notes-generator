@@ -20,10 +20,14 @@ export default function Login() {
         setLoading(true);
 
         try {
-            await login(email, password);
-            navigate('/dashboard');
+            const result = await login(email, password);
+            if (result.success) {
+                navigate('/dashboard');
+            } else {
+                setError(result.error || 'Invalid credentials');
+            }
         } catch (err) {
-            setError(err.response?.data?.detail || 'Invalid credentials');
+            setError('An unexpected error occurred');
         } finally {
             setLoading(false);
         }

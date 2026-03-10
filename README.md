@@ -150,6 +150,36 @@ cp .env.example .env    # macOS/Linux
 npm run dev
 ```
 
+### MCP Server Setup (Optional)
+
+The MCP (Model Context Protocol) servers provide integration with Calendar, Drive, and local file system.
+
+```bash
+# Navigate to backend directory
+cd backend
+
+# Start local MCP servers (Filesystem, Calendar, Drive)
+python start_mcp_servers.py
+
+# Or include Google API servers (requires credentials.json)
+python start_mcp_servers.py --google
+
+# Or start only Google API servers
+python start_mcp_servers.py --google-only
+```
+
+**Available MCP Servers:**
+
+| Server | URL | Description |
+|--------|-----|-------------|
+| Filesystem | http://localhost:9000 | Local file system operations |
+| Calendar | http://localhost:9001 | Local calendar management |
+| Drive | http://localhost:9002 | Local drive simulation |
+| Google Calendar | http://localhost:9010 | Real Google Calendar API |
+| Google Drive | http://localhost:9011 | Real Google Drive API |
+
+> **Note:** Google API servers require a `credentials.json` file from Google Cloud Console. Place it at `backend/app/mcp/servers/credentials.json`.
+
 ## ⚙️ Environment Variables
 
 ### Backend (.env)

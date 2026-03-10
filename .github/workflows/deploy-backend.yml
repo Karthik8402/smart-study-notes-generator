@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 env:
-  AZURE_WEBAPP_NAME: smart-study-api-backend   # Replace with your app name
+  AZURE_WEBAPP_NAME: smart-study-api-backend-karthi
   PYTHON_VERSION: '3.10'                       # set this to the python version to use
   STARTUP_COMMAND: 'gunicorn --bind=0.0.0.0 --timeout 600 -w 4 -k uvicorn.workers.UvicornWorker app.main:app'
 

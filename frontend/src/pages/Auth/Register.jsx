@@ -33,10 +33,14 @@ export default function Register() {
         setLoading(true);
 
         try {
-            await register(name, email, password);
-            navigate('/dashboard');
+            const result = await register(email, password, name);
+            if (result.success) {
+                navigate('/dashboard');
+            } else {
+                setError(result.error);
+            }
         } catch (err) {
-            setError(err.response?.data?.detail || 'Registration failed');
+            setError('An unexpected error occurred');
         } finally {
             setLoading(false);
         }
