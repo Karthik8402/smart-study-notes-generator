@@ -11,43 +11,39 @@ on:
 
 env:
   AZURE_WEBAPP_NAME: smart-study-api-backend-karthi
-  PYTHON_VERSION: '3.10'
+  PYTHON_VERSION: '3.10'                       # set this to the python version to use
+  STARTUP_COMMAND: 'gunicorn --bind=0.0.0.0 --timeout 600 -w 4 -k uvicorn.workers.UvicornWorker app.main:app'
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Set up Python version
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          cache: 'pip'
-          cache-dependency-path: 'backend/requirements.txt'
 
-      - name: Create deployment package
-        working-directory: backend
+      - name: Create and start virtual environment
         run: |
-          zip -r ../release.zip . \
-            -x "*.pyc" \
-            -x "__pycache__/*" \
-            -x "venv/*" \
-            -x ".env" \
-            -x "*.log" \
-            -x "uploads/*" \
-            -x "chroma_db/*" \
-            -x "tests/*" \
-            -x ".pytest_cache/*"
+          cd backend
+          python -m venv venv
+          source venv/bin/activate
+          pip install -r requirements.txt
+          pip install gunicorn httptools uvloop
 
-      - name: Upload artifact
+      - name: Zip artifact for deployment
+        run: |
+          cd backend
+          zip -r ../release.zip ./*
+
+      - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
           name: python-app
           path: release.zip
-          retention-days: 1
 
   deploy:
     runs-on: ubuntu-latest
@@ -55,20 +51,19 @@ jobs:
     environment:
       name: 'Production'
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
-
+    
     steps:
-      - name: Download artifact
+      - name: Download artifact from build job
         uses: actions/download-artifact@v4
         with:
           name: python-app
 
-      - name: Unzip artifact
-        run: unzip release.zip -d deploy
+      - name: Unzip artifact for deployment
+        run: unzip release.zip
 
-      - name: Deploy to Azure Web App
-        id: deploy-to-webapp
+      - name: 'Deploy to Azure Web App'
         uses: azure/webapps-deploy@v3
+        id: deploy-to-webapp
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-          package: deploy
